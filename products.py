@@ -150,7 +150,7 @@ class Products(object):
             return dict((name, src_arch) for name in names)
 
         dbc = compose_dbh.cursor()
-        qry = "SELECT DISTINCT trees.arch, packages.name FROM trees, packages, tree_packages WHERE trees.imported = 1 and trees.id = tree_packages.trees_id AND packages.id = tree_packages.packages_id AND packages.arch = %s AND packages.name IN %s AND trees.id IN %s"
+        qry = "SELECT DISTINCT trees.arch, packages.name FROM trees, packages, tree_packages WHERE trees.imported = 1 and trees.id = tree_packages.trees_id AND packages.id = tree_packages.packages_id AND packages.arch = %s AND packages.name = ANY(%s) AND trees.id = ANY(%s)"
         qargs = [src_arch, names, trees]
         if version:
             qry += " AND packages.version = %s"
