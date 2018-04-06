@@ -1,7 +1,5 @@
 #koji hub plugin
 
-from koji.context import context
-from koji.plugin import export
 import koji
 import pgdb
 import re
@@ -199,14 +197,12 @@ class Products(object):
             return -1
     mysort = staticmethod(mysort)
 
-@export
 def getProductInfo(label):
     """
     Get a list of the versions and variants of a product with the given label.
     """
     return Products.get_product_info(Products.compose_get_dbh(), label)
 
-@export
 def getProductListings(productLabel, buildInfo):
     """
     Get a map of which variants of the given product included packages built
@@ -215,10 +211,14 @@ def getProductListings(productLabel, buildInfo):
     compose_dbh = Products.compose_get_dbh()
 
     #XXX - need access to hub kojihub functions
-    build = context.handlers.call('getBuild', buildInfo, strict=True)
+    conf = koji.read_config('brew')
+    hub = conf['server']
+    session = koji.ClientSession(hub, {})
+
+    build = session.getBuild(buildInfo, strict=True)
     sys.stderr.write("%r" % build)
     sys.stderr.flush()
-    rpms = context.handlers.call('listRPMs', buildID=build['id'])
+    rpms = session.listRPMs(buildID=build['id'])
     if not rpms:
         raise koji.GenericError, "Could not find any RPMs for build: %s" % buildInfo
 
