@@ -1,2 +1,4 @@
 Flask
 Flask-XML-RPC-Re
+koji
+pygresql
