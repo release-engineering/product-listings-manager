@@ -36,19 +36,24 @@ Installation and setup
 ----------------------
 
 1. Set up a virtualenv::
+
    $ virtualenv venv
 
 2. Activate the virtualenv::
+
    $ . venv/bin/activate
 
 3. Install the prerequisite packages::
+
    $ pip install -r requirements.txt
 
 4. Create ``instance/config.py`` with the database settings::
+
    $ cp config.py instance/config.py
    $ vi instance/config.py
 
 5. Run the server::
+
    $ python app.py
 
 The Flask web server will run on TCP 5000.
