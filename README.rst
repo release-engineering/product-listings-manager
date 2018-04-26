@@ -52,3 +52,11 @@ Installation and setup
    $ python app.py
 
 The Flask web server will run on TCP 5000.
+
+Running the tests
+-----------------
+
+Install pytest, then run it for the ``tests/`` directory::
+
+   $ pip install pytest
+   $ python -m pytest tests/
