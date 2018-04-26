@@ -58,6 +58,8 @@ Installation and setup
 
 The Flask web server will run on TCP 5000.
 
+You can access the http://localhost:5000/xmlrpc at that point.
+
 Running the tests
 -----------------
 
