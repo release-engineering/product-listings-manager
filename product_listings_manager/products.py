@@ -45,19 +45,16 @@ class Products(object):
             return cmp(x_score, y_score)
     my_sort = staticmethod(my_sort)
 
-    def execute_query(dbh, query, args=None):
-        if args:
-            dbh.execute(query, args)
-        else:
-            dbh.execute(query)
+    def execute_query(dbh, query, **kwargs):
+        dbh.execute(query, kwargs)
     execute_query = staticmethod(execute_query)
 
     def get_product_info(compose_dbh, product):
         dbc = compose_dbh.cursor()
         Products.execute_query(dbc, """
-        SELECT version, variant
-        FROM products
-        WHERE label = '%s'""" % product)
+            SELECT version, variant
+            FROM products
+            WHERE label = %(product)s""", product=product)
         products = dbc.fetchall()
         versions = [x[0] for x in products]
         versions.sort(Products.my_sort)
@@ -71,17 +68,30 @@ class Products(object):
 
     def get_overrides(compose_dbh, product, version, variant=None):
         '''Returns the list of package overrides for the particular product specified.'''
+
+        qargs = dict(product=product, version=version)
         if variant:
-            variant_clause = "products.variant = '%s'" % variant
+            variant_clause = "products.variant = %(variant)s"
+            qargs['variant'] = variant
         else:
             variant_clause = "products.variant is NULL"
+
+        qry = """
+            SELECT name, pkg_arch, product_arch, include
+            FROM overrides
+            WHERE product IN (
+                SELECT id
+                FROM products
+                WHERE label = %(product)s
+                AND version = %(version)s
+                AND """ + variant_clause + """
+            )
+            """
+
         dbc = compose_dbh.cursor()
-        Products.execute_query(dbc, """
-        SELECT name, pkg_arch, product_arch, include
-        FROM overrides
-        WHERE product IN ( SELECT id FROM products WHERE label = '%s' and version = '%s' and %s )
-        """ % (product, version, variant_clause))
+        Products.execute_query(dbc, qry, **qargs)
         rows = dbc.fetchall()
+
         overrides = {}
         for row in rows:
             name, pkg_arch, product_arch, include = row[0:4]
@@ -92,7 +102,11 @@ class Products(object):
     def get_match_versions(compose_dbh, product):
         '''Returns the list of packages for this product where we must match the version.'''
         dbc = compose_dbh.cursor()
-        Products.execute_query(dbc, """SELECT name FROM match_versions WHERE product = '%s'""" % product)
+        Products.execute_query(dbc, """
+            SELECT name
+            FROM match_versions
+            WHERE product = %(product)s
+            """, product=product)
         rows = dbc.fetchall()
         matches = []
         for row in rows:
@@ -103,7 +117,12 @@ class Products(object):
     def get_srconly_flag(compose_dbh, product, version):
         '''BREW-260 - Returns allow_source_only field for the product and matching version.'''
         dbc = compose_dbh.cursor()
-        Products.execute_query(dbc, """SELECT allow_source_only FROM products WHERE label = '%s' and version = '%s'""" % (product,version))
+        Products.execute_query(dbc, """
+            SELECT allow_source_only
+            FROM products
+            WHERE label = %(product)s
+            AND version = %(version)s
+            """, product=product, version=version)
         rows = dbc.fetchall()
         for (allow_source_only,) in rows:
             if allow_source_only:
@@ -117,22 +136,28 @@ class Products(object):
         Looks in the compose db for a list of trees (one per arch) that are the most
         recent for the particular product specified.'''
 
+        qargs = dict(product=product, version=version)
         if variant:
-            variant_clause = "products.variant = '%s'" % variant
+            variant_clause = "products.variant = %(variant)s"
+            qargs['variant'] = variant
         else:
             variant_clause = "products.variant is NULL"
+
+        qry = """
+            SELECT trees.id, arch, compatlayer
+            FROM trees, products, tree_product_map
+            WHERE imported = 1
+            AND trees.id = tree_product_map.tree_id
+            AND products.id = tree_product_map.product_id
+            AND products.label = %(product)s
+            AND products.version = %(version)s
+            AND """ + variant_clause + """
+            order by date desc, id desc
+            """
+
         dbc = compose_dbh.cursor()
-        Products.execute_query(dbc, """
-        SELECT trees.id, arch, compatlayer
-        FROM trees, products, tree_product_map
-        WHERE imported = 1
-        and trees.id = tree_product_map.tree_id
-        and products.id = tree_product_map.product_id
-        and products.label = '%s'
-        and products.version = '%s'
-        and %s
-        order by date desc, id desc
-        """ % (product, version, variant_clause))
+        Products.execute_query(dbc, qry, **qargs)
+
         rows = dbc.fetchall()
         trees = {}
         compat_trees = {}
@@ -155,15 +180,31 @@ class Products(object):
             return dict((name, src_arch) for name in names)
 
         dbc = compose_dbh.cursor()
-        qry = "SELECT DISTINCT trees.arch, packages.name FROM trees, packages, tree_packages WHERE trees.imported = 1 and trees.id = tree_packages.trees_id AND packages.id = tree_packages.packages_id AND packages.arch = %s AND packages.name = ANY(%s) AND trees.id = ANY(%s)"
+        qry = """
+            SELECT DISTINCT trees.arch, packages.name
+            FROM trees, packages, tree_packages
+            WHERE trees.imported = 1 and trees.id = tree_packages.trees_id
+            AND packages.id = tree_packages.packages_id
+            AND packages.arch = %(arch)s
+            """
+
         if pgdb.version.startswith('4'):
             # backwards compatibility with pygresql 4 in eng-rhel-7
-            qry = "SELECT DISTINCT trees.arch, packages.name FROM trees, packages, tree_packages WHERE trees.imported = 1 and trees.id = tree_packages.trees_id AND packages.id = tree_packages.packages_id AND packages.arch = %s AND packages.name IN %s AND trees.id IN %s"
-        qargs = [src_arch, names, trees]
+            qry += """
+                AND packages.name IN %(names)s
+                AND trees.id IN %(trees)s
+                """
+        else:
+            qry += """
+                AND packages.name = ANY(%(names)s)
+                AND trees.id = ANY(%(trees)s)
+                """
+
+        qargs = dict(arch=src_arch, names=names, trees=trees)
         if version:
-            qry += " AND packages.version = %s"
-            qargs.append(version)
-        Products.execute_query(dbc, qry, qargs)
+            qry += " AND packages.version = %(version)s"
+            qargs['version'] = version
+        Products.execute_query(dbc, qry, **qargs)
         ret = {}
         while 1:
             arow = dbc.fetchone()
