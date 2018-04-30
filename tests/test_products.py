@@ -4,6 +4,11 @@ from products import getProductListings
 import pytest
 
 
+pytestmark = pytest.mark.skipif(
+    not pytest.config.getoption('--live'),
+    reason='use --live argument to query production servers'
+)
+
 @pytest.fixture(scope='module')
 def dbh():
     return Products.compose_get_dbh()
