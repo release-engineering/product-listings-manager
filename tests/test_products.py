@@ -46,11 +46,6 @@ class TestProductLive(object):
     def test_dest_get_archs(self):
         pass
 
-    def test_mysort(self):
-        # x, y = (???, ???)
-        # assert Products.mysort(x, y) == ???
-        pass
-
 
 class TestGetProductInfo(object):
 
