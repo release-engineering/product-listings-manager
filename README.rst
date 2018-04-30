@@ -52,7 +52,16 @@ Installation and setup
    $ cp config.py instance/config.py
    $ vi instance/config.py
 
-5. Run the server::
+5. Install brewkoji package. This creates ``/etc/koji.conf.d/brewkoji.conf``,
+   so ``products.py`` can contact the Brew hub::
+
+   $ sudo yum -y install brewkoji
+
+6. Trust Brew's SSL certificate::
+
+   $ export REQUESTS_CA_BUNDLE=/etc/pki/ca-trust/source/anchors/RH-IT-Root-CA.crt
+
+7. Run the server::
 
    $ python app.py
 
