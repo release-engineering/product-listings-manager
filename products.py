@@ -185,18 +185,6 @@ class Products(object):
         return pgdb.connect(database=dbname, host=dbhost, user=dbuser, password=dbpasswd)
     compose_get_dbh = staticmethod(compose_get_dbh)
 
-    def mysort(x, y):
-        if x[0].find("-debuginfo") > -1:
-            if y[0].find("-debuginfo") == -1:
-                return 1
-            else:
-                return cmp(x[0], y[0])
-        if y[0].find("-debuginfo") == -1:
-            return cmp(x[0], y[0])
-        else:
-            return -1
-    mysort = staticmethod(mysort)
-
 def getProductInfo(label):
     """
     Get a list of the versions and variants of a product with the given label.
@@ -220,17 +208,19 @@ def getProductListings(productLabel, buildInfo):
     sys.stderr.flush()
     rpms = session.listRPMs(buildID=build['id'])
     if not rpms:
-        raise koji.GenericError, "Could not find any RPMs for build: %s" % buildInfo
+        raise koji.GenericError("Could not find any RPMs for build: %s" % buildInfo)
 
-    tmp_list = [ (x['nvr'], x) for x in rpms ]
-    tmp_list.sort(Products.mysort)
-    rpms = [ x[1] for x in tmp_list ]
+    # sort rpms, so first part of list consists of sorted 'normal' rpms and
+    # second part are sorted debuginfos
+    debuginfos = [x for x in rpms if '-debuginfo' in x['nvr']]
+    base_rpms = [x for x in rpms if '-debuginfo' not in x['nvr']]
+    rpms = sorted(base_rpms, key=lambda x: x['nvr']) + sorted(debuginfos, key=lambda x: x['nvr'])
     srpm = "%(package_name)s-%(version)s-%(release)s.src.rpm" % build
 
     prodinfo = Products.get_product_info(compose_dbh, productLabel)
     if not prodinfo:
         # no product with the given label exists
-        raise koji.GenericError, "Could not find a product with label: %s" % productLabel
+        raise koji.GenericError("Could not find a product with label: %s" % productLabel)
     version, variants = prodinfo
 
     listings = {}
