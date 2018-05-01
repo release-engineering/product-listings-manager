@@ -31,4 +31,5 @@ def getProductListings(*a, **kw):
         raise Fault(e)
 
 
-app.run()
+if __name__ == '__main__':
+    app.run()
