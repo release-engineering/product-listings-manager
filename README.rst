@@ -72,7 +72,13 @@ You can access the http://localhost:5000/xmlrpc at that point.
 Running the tests
 -----------------
 
-Install pytest, then run it for the ``tests/`` directory::
+You can invoke the tests with ``tox``::
+
+   $ pip install tox
+   $ tox
+
+Alternatively, you can run pytest directly. In this example I add the
+``--live`` argument to run against the live composedb instance::
 
    $ pip install pytest
-   $ python -m pytest tests/
+   $ python -m pytest --live tests/
