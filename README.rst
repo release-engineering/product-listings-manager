@@ -65,6 +65,11 @@ Installation and setup
 
    $ export REQUESTS_CA_BUNDLE=/etc/pki/ca-trust/source/anchors/RH-IT-Root-CA.crt
 
+  ... Or if you've installed this globally on your system, tell requests to use
+  your global CA store::
+
+   $ export REQUESTS_CA_BUNDLE=/etc/pki/tls/certs/ca-bundle.crt
+
 8. Run the server::
 
    $ FLASK_APP=product_listings_manager flask run
