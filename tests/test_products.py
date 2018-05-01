@@ -1,6 +1,6 @@
-from products import Products
-from products import getProductInfo
-from products import getProductListings
+from product_listings_manager.products import Products
+from product_listings_manager.products import getProductInfo
+from product_listings_manager.products import getProductListings
 import pytest
 
 

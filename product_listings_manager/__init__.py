@@ -2,7 +2,7 @@ import traceback
 from flask import Flask
 from flask_xmlrpcre.xmlrepcre import XMLRPCHandler, Fault
 
-import products
+import product_listings_manager.products
 
 app = Flask(__name__)
 

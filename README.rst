@@ -45,7 +45,7 @@ Installation and setup
 
 3. Install the prerequisite packages::
 
-   $ pip install -r requirements.txt
+   $ python setup.py install
 
 4. Create ``instance/config.py`` with the database settings::
 
@@ -63,7 +63,7 @@ Installation and setup
 
 7. Run the server::
 
-   $ python app.py
+   $ FLASK_APP=product_listings_manager flask run
 
 The Flask web server will run on TCP 5000.
 
