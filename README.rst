@@ -1,6 +1,9 @@
 product-listings-manager
 ========================
 
+.. image:: https://travis-ci.org/ktdreyer/product-listings-manager.svg?branch=master
+          :target: https://travis-ci.org/ktdreyer/product-listings-manager
+
 HTTP interface for finding product listings and interacting with data in
 composedb.
 

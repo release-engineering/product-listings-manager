@@ -1,0 +1,26 @@
+FROM centos:7
+
+WORKDIR /build
+
+# epel has python2-pip
+RUN yum -y install epel-release
+
+# pygresql requires postgresql-devel
+# koji requires krb5-devel
+# rpm-py-installer (for koji) requires rpm-devel gcc python-devel
+RUN \
+  yum -y --setopt skip_missing_names_on_install=False install \
+  python2-pip \
+  postgresql-devel \
+  krb5-devel \
+  rpm-devel gcc python-devel
+
+# pytest needs a newer pip/tox than what EPEL has
+RUN pip install tox
+
+COPY . .
+
+# live tests require this file :(
+COPY config.py instance/config.py
+
+CMD ["tox"]

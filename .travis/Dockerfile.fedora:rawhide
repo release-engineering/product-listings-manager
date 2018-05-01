@@ -1,0 +1,25 @@
+FROM fedora:rawhide
+
+WORKDIR /build
+
+# Hack for DNF bug
+# ValueError("The supplied metadata version isn't supported")
+# https://bugzilla.redhat.com/1566593 has not yet made its way to the container
+# images yet.
+RUN sed -i s/enabled=1/enabled=0/ /etc/yum.repos.d/*-modular.repo || :
+
+# pygresql requires postgresql-devel
+# koji requires krb5-devel
+# rpm-py-installer (for koji) requires rpm-devel gcc python-devel
+RUN yum -y --setopt skip_missing_names_on_install=False install \
+  tox \
+  postgresql-devel \
+  krb5-devel \
+  rpm-devel gcc python-devel
+
+COPY . .
+
+# live tests require this file :(
+COPY config.py instance/config.py
+
+CMD ["tox"]
