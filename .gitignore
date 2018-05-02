@@ -11,3 +11,5 @@ build/*
 dist/*
 doc/build/*
 /config.py
+/product-listings-manager.spec
+*.rpm

@@ -1,0 +1,91 @@
+%if 0%{?rhel} && 0%{?rhel} <= 7
+%bcond_with python3
+%else
+%bcond_without python3
+%endif
+
+%global modname product_listings_manager
+
+Name: product-listings-manager
+Version: @VERSION@
+Release: @RELEASE@%{?dist}
+Summary: HTTP interface to composedb
+
+License: MIT
+URL: https://github.com/ktdreyer/product-listings-manager
+Source0: %{name}-%{version}.tar.gz
+BuildArch: noarch
+
+%if %{with python3}
+BuildRequires: python3-devel
+BuildRequires: python3-flask
+BuildRequires: python3-flask-xml-rpc
+BuildRequires: python3-flask-restful
+BuildRequires: python3-koji
+BuildRequires: python3-pygresql
+BuildRequires: python3-pytest
+BuildRequires: python3-mock
+Requires: python3-flask
+Requires: python3-flask-xml-rpc
+Requires: python3-flask-restful
+Requires: python3-koji
+Requires: python3-pygresql
+%else
+BuildRequires: python2-devel
+BuildRequires: python-flask
+BuildRequires: python-flask-xml-rpc
+BuildRequires: python2-flask-restful
+BuildRequires: python2-koji
+BuildRequires: PyGreSQL
+BuildRequires: pytest
+BuildRequires: python-mock
+Requires: python-flask
+Requires: python-flask-xml-rpc
+Requires: python2-flask-restful
+Requires: python2-koji
+Requires: PyGreSQL
+%endif
+
+%description
+HTTP interface for finding product listings and interacting with data in
+composedb.
+
+%prep
+%autosetup
+
+
+%build
+%if %{with python3}
+%py3_build
+%else
+%py2_build
+%endif
+
+
+%install
+%if %{with python3}
+%py3_install
+%else
+%py2_install
+%endif
+
+%check
+export FLASK_CONFIG=config.py
+%if %{with python3}
+py.test-3 -v %{modname}/tests
+%else
+py.test-2.7 -v %{modname}/tests
+%endif
+
+%files
+%license LICENSE
+%doc README.rst
+%if %{with python3}
+%{python3_sitelib}/%{modname}/
+%{python3_sitelib}/%{modname}-*.egg-info/
+%else
+%{python2_sitelib}/%{modname}/
+%{python2_sitelib}/%{modname}-*.egg-info/
+%endif
+
+%changelog
