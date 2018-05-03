@@ -35,33 +35,42 @@ Goals with this project
 Installation and setup
 ----------------------
 
-1. Set up a virtualenv::
+1. Install the prerequisite system packages::
+
+   $ sudo yum -y install postgresql-devel krb5-devel rpm-devel gcc python-devel
+
+2. Set up a virtualenv::
 
    $ virtualenv venv
 
-2. Activate the virtualenv::
+3. Activate the virtualenv::
 
    $ . venv/bin/activate
 
-3. Install the prerequisite packages::
+4. Install the prerequisite packages::
 
    $ python setup.py install
 
-4. Create ``instance/config.py`` with the database settings::
+5. Create ``instance/config.py`` with the database settings::
 
    $ cp config.py instance/config.py
    $ vi instance/config.py
 
-5. Install brewkoji package. This creates ``/etc/koji.conf.d/brewkoji.conf``,
+6. Install brewkoji package. This creates ``/etc/koji.conf.d/brewkoji.conf``,
    so ``products.py`` can contact the Brew hub::
 
    $ sudo yum -y install brewkoji
 
-6. Trust Brew's SSL certificate::
+7. Trust Brew's SSL certificate::
 
    $ export REQUESTS_CA_BUNDLE=/etc/pki/ca-trust/source/anchors/RH-IT-Root-CA.crt
 
-7. Run the server::
+  ... Or if you've installed this globally on your system, tell requests to use
+  your global CA store::
+
+   $ export REQUESTS_CA_BUNDLE=/etc/pki/tls/certs/ca-bundle.crt
+
+8. Run the server::
 
    $ FLASK_APP=product_listings_manager flask run
 
