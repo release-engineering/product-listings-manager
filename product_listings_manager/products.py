@@ -171,7 +171,7 @@ class Products(object):
                 for tree_arch, include in overrides[name][src_arch].items():
                     if include:
                         ret.setdefault(name, {}).setdefault(tree_arch, 1)
-                    elif ret.has_key(tree_arch):
+                    elif name in ret and tree_arch in ret[name]:
                         del ret[name][tree_arch]
         return ret
     dest_get_archs = staticmethod(dest_get_archs)
