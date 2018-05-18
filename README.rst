@@ -73,17 +73,22 @@ Installation and setup
 
    $ python setup.py install
 
-5. Create ``instance/config.py`` with the database settings::
+5. Create ``config.py`` with the database settings::
 
-   $ cp config.py instance/config.py
-   $ vi instance/config.py
+   $ cp product_listings_manager/config.py config.py
+   $ vi config.py
 
-6. Install brewkoji package. This creates ``/etc/koji.conf.d/brewkoji.conf``,
+6. Set the ``FLASK_CONFIG`` environment variable to the full filesystem path of
+   this new file::
+
+   $ export FLASK_CONFIG=$(pwd)/config.py
+
+7. Install brewkoji package. This creates ``/etc/koji.conf.d/brewkoji.conf``,
    so ``products.py`` can contact the Brew hub::
 
    $ sudo yum -y install brewkoji
 
-7. Trust Brew's SSL certificate::
+8. Trust Brew's SSL certificate::
 
    $ export REQUESTS_CA_BUNDLE=/etc/pki/ca-trust/source/anchors/RH-IT-Root-CA.crt
 
@@ -92,7 +97,7 @@ Installation and setup
 
    $ export REQUESTS_CA_BUNDLE=/etc/pki/tls/certs/ca-bundle.crt
 
-8. Run the server::
+9. Run the server::
 
    $ FLASK_APP=product_listings_manager.app flask run
 
