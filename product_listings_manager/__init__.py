@@ -1,6 +1,7 @@
 import traceback
 from flask import Flask
-from flask_xmlrpcre.xmlrepcre import XMLRPCHandler, Fault
+from flaskext.xmlrpc import XMLRPCHandler, Fault
+
 
 import product_listings_manager.products
 
