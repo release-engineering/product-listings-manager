@@ -28,7 +28,7 @@ setup(name="product-listings-manager",
       packages=find_packages(),
       install_requires=[
         'Flask',
-        'Flask-XML-RPC-Re',
+        'Flask-XML-RPC',
         'koji',
         'pygresql',
       ],
