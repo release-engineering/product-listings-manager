@@ -10,8 +10,18 @@ composedb.
 Previously this mechanism was a Koji plugin. This ``product-listings-manager``
 project extracts the plugin into its own web service apart from Koji.
 
+REST API
+--------
+
+You may use HTTP GET request to get ``/api/v1.0/product-info/<PRODUCT>`` or
+``/api/v1.0/product-listings/<PRODUCT>/<BUILD_INFO>``. The parameters and
+results are same as for the XML-RPC ``getProductInfo`` and
+``getProductListings`` calls used in Brew.
+
 XML-RPC
 -------
+
+**XML-RPC is deprecated.** Use REST API instead.
 
 You may call the ``getProductListings`` API call on ``<url>/xmlrpc``. This
 works the same way that the Brew call does. See ``client.py`` for an example.
@@ -79,7 +89,7 @@ Installation and setup
 
 The Flask web server will run on TCP 5000.
 
-You can access the http://localhost:5000/xmlrpc at that point.
+You can access the http://localhost:5000/ at that point.
 
 Running the tests
 -----------------
