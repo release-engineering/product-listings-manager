@@ -35,5 +35,6 @@ setup(name="product-listings-manager",
       ],
       tests_require=[
           'pytest',
+          'mock',
       ],
 )
