@@ -5,7 +5,7 @@ from mock import patch
 from product_listings_manager.app import app
 
 
-@pytest.fixture
+@pytest.yield_fixture
 def client():
     client = app.test_client()
     yield client
