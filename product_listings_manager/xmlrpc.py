@@ -15,7 +15,7 @@ def getProductInfo(*a, **kw):
     except Exception as e:
         err = traceback.print_exc()
         current_app.logger.error(err)
-        raise Fault(e)
+        raise Fault(1, 'An unexpected error has occurred.')
 
 
 @handler.register
@@ -26,4 +26,4 @@ def getProductListings(*a, **kw):
         err = traceback.print_exc()
         # import pdb; pdb.set_trace()
         current_app.logger.error(err)
-        raise Fault(e)
+        raise Fault(1, 'An unexpected error has occurred.')
