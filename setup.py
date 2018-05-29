@@ -29,10 +29,12 @@ setup(name="product-listings-manager",
       install_requires=[
         'Flask',
         'Flask-XML-RPC',
+        'Flask-Restful',
         'koji',
         'pygresql',
       ],
       tests_require=[
           'pytest',
+          'mock',
       ],
 )
