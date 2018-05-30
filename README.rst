@@ -85,7 +85,7 @@ Installation and setup
 
 8. Run the server::
 
-   $ FLASK_APP=product_listings_manager flask run
+   $ FLASK_APP=product_listings_manager.app flask run
 
 The Flask web server will run on TCP 5000.
 
