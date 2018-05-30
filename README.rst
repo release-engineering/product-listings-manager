@@ -45,6 +45,15 @@ Goals with this project
 * Decouple the development of this service so that it is easier to develop,
   test, and deploy apart from Brew's prod environment.
 
+Architecture diagram
+--------------------
+
+.. image:: prod-listings-manager.png
+    :width: 958px
+    :align: center
+    :height: 364px
+    :alt: product-listings-manager architecture diagram
+
 Installation and setup
 ----------------------
 
