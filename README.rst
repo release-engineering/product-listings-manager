@@ -112,4 +112,4 @@ Alternatively, you can run pytest directly. In this example I add the
 ``--live`` argument to run against the live composedb instance::
 
    $ pip install pytest
-   $ python -m pytest --live tests/
+   $ python -m pytest --live product_listings_manager/tests/
