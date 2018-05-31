@@ -16,7 +16,7 @@ REST API
 You may use HTTP GET request to get ``/api/v1.0/product-info/<PRODUCT>`` or
 ``/api/v1.0/product-listings/<PRODUCT>/<BUILD_INFO>``. The parameters and
 results are same as for the XML-RPC ``getProductInfo`` and
-``getProductListings`` calls used in Brew.
+``getProductListings`` calls used in Brew. See ``client.py`` for an example.
 
 XML-RPC
 -------
