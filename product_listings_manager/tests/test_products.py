@@ -5,7 +5,7 @@ import pytest
 
 
 pytestmark = pytest.mark.skipif(
-    not pytest.config.getoption('--live'),
+    not pytest.config.getoption('--live', default=False),
     reason='use --live argument to query production servers'
 )
 
