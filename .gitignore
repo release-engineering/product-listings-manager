@@ -10,4 +10,6 @@
 build/*
 dist/*
 doc/build/*
-instance/config.py
+/config.py
+/product-listings-manager.spec
+*.rpm

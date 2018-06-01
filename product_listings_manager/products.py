@@ -4,7 +4,12 @@ import koji
 import pgdb
 import re
 import sys
-import instance.config
+
+dbname = None  # eg. "compose"
+dbhost = None  # eg "db.example.com"
+dbuser = None  # eg. "myuser"
+dbpasswd = None  # eg. "mypassword"
+
 
 class Products(object):
     """
@@ -178,10 +183,6 @@ class Products(object):
 
     def compose_get_dbh():
         # Database settings
-        dbname = instance.config.dbname
-        dbhost = instance.config.dbhost
-        dbuser = instance.config.dbuser
-        dbpasswd = instance.config.dbpasswd
         return pgdb.connect(database=dbname, host=dbhost, user=dbuser, password=dbpasswd)
     compose_get_dbh = staticmethod(compose_get_dbh)
 

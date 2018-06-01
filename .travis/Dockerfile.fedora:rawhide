@@ -19,7 +19,4 @@ RUN yum -y --setopt skip_missing_names_on_install=False install \
 
 COPY . .
 
-# live tests require this file :(
-COPY config.py instance/config.py
-
 CMD ["tox"]

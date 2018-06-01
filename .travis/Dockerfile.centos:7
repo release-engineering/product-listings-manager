@@ -20,7 +20,4 @@ RUN pip install tox
 
 COPY . .
 
-# live tests require this file :(
-COPY config.py instance/config.py
-
 CMD ["tox"]
