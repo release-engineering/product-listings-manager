@@ -14,6 +14,9 @@ NVR := $(NAME)-$(VERSION)-$(RELEASE).el7
 # Copr will override this:
 outdir = .
 
+# Source package output directory
+dist_dir = .
+
 
 # Testing only
 echo:
@@ -29,7 +32,7 @@ clean:
 
 dist:
 	[ -f /usr/bin/python ] || $(INSTALLER) -y install python \
-	  && python setup.py sdist --dist-dir .
+	  && python setup.py sdist --dist-dir $(dist_dir)
 
 spec:
 	sed $(NAME).spec.in \
@@ -41,7 +44,7 @@ spec:
 srpm: spec dist
 	rpmbuild -bs $(NAME).spec \
           --define "_topdir ." \
-          --define "_sourcedir ." \
+          --define "_sourcedir $(dist_dir)" \
           --define "_srcrpmdir $(outdir)" \
           --define "dist .el7"
 
