@@ -68,6 +68,8 @@ composedb.
 %else
 %py2_install
 %endif
+mkdir -p %{buildroot}%{_sysconfdir}/%{name}
+cp -p %{modname}/config.py %{buildroot}%{_sysconfdir}/%{name}
 
 %check
 export FLASK_CONFIG=config.py
@@ -80,6 +82,9 @@ py.test-2.7 -v %{modname}/tests
 %files
 %license LICENSE
 %doc README.rst
+%config(noreplace) %{_sysconfdir}/%{name}/config.py
+%exclude %{_sysconfdir}/%{name}/config.pyc
+%exclude %{_sysconfdir}/%{name}/config.pyo
 %if %{with python3}
 %{python3_sitelib}/%{modname}/
 %{python3_sitelib}/%{modname}-*.egg-info/
