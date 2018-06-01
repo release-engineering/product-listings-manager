@@ -7,7 +7,8 @@ app = Flask(__name__)
 
 # Set products.py's DB values from our Flask config:
 app.config.from_object('product_listings_manager.config')
-app.config.from_envvar('FLASK_CONFIG')
+app.config.from_pyfile('/etc/product-listings-manager/config.py', silent=True)
+app.config.from_envvar('FLASK_CONFIG', silent=True)
 products.dbname = app.config['DBNAME'] # eg. "compose"
 products.dbhost = app.config['DBHOST'] # eg "db.example.com"
 products.dbuser = app.config['DBUSER'] # eg. "myuser"
