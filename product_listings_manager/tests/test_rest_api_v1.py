@@ -4,15 +4,6 @@ from mock import patch
 
 from product_listings_manager.app import app
 
-# Flask < 1.0 does not have get_json.
-from flask import Response
-import json
-if not hasattr(Response, 'get_json'):
-    def get_json(self, force=False, silent=False, cache=True):
-        """ Minimal implementation we can use this in the tests. """
-        return json.loads(self.data)
-    Response.get_json = get_json
-
 
 @pytest.yield_fixture
 def client():
