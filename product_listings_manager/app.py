@@ -1,6 +1,6 @@
 from flask import Flask
 
-from product_listings_manager import rest_api_v1, xmlrpc
+from product_listings_manager import root, rest_api_v1, xmlrpc
 from product_listings_manager import products
 
 app = Flask(__name__)
@@ -14,6 +14,7 @@ products.dbhost = app.config['DBHOST'] # eg "db.example.com"
 products.dbuser = app.config['DBUSER'] # eg. "myuser"
 products.dbpasswd = app.config['DBPASSWD'] # eg. "mypassword"
 
+app.register_blueprint(root.blueprint, url_prefix='/')
 app.register_blueprint(rest_api_v1.blueprint, url_prefix='/api/v1.0')
 xmlrpc.handler.connect(app, '/xmlrpc')
 
