@@ -11,6 +11,18 @@ def client():
     yield client
 
 
+class TestIndex(object):
+    def test_get_index(self, client):
+        r = client.get('/api/v1.0/')
+        expected_json = {
+            'about_url': 'http://localhost/api/v1.0/about',
+            'product_info_url': 'http://localhost/api/v1.0/product-info/:label',
+            'product_listings_url': 'http://localhost/api/v1.0/product-listings/:label/:build_info',
+        }
+        assert r.status_code == 200
+        assert r.get_json() == expected_json
+
+
 class TestAbout(object):
     def test_get_version(self, client):
         from product_listings_manager import __version__

@@ -9,7 +9,7 @@ def client():
     yield client
 
 
-class TestAbout(object):
+class TestRoot(object):
     def test_get_version(self, client):
         r = client.get('/')
         expected_docs = 'https://github.com/ktdreyer/product-listings-manager'
