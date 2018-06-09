@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, request, jsonify
 
 from product_listings_manager import root, rest_api_v1, xmlrpc
 from product_listings_manager import products
@@ -17,6 +17,13 @@ products.dbpasswd = app.config['DBPASSWD'] # eg. "mypassword"
 app.register_blueprint(root.blueprint, url_prefix='/')
 app.register_blueprint(rest_api_v1.blueprint, url_prefix='/api/v1.0')
 xmlrpc.handler.connect(app, '/xmlrpc')
+
+
+@app.errorhandler(404)
+def page_not_found_error(ex):
+    if not request.path.startswith('/xmlrpc'):
+        return jsonify({'error': str(ex)})
+
 
 if __name__ == '__main__':
     app.run()
