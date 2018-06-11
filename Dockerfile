@@ -41,8 +41,6 @@ RUN if [ "$cacert_url" != "undefined" ]; then \
 USER 1001
 EXPOSE 5000
 
-ENV FLASK_CONFIG "$config_path"
-
 ENTRYPOINT [ \
     "gunicorn", \
     "--bind=0.0.0.0:5000", \
