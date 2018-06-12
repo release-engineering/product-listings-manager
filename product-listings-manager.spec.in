@@ -72,7 +72,6 @@ mkdir -p %{buildroot}%{_sysconfdir}/%{name}
 cp -p %{modname}/config.py %{buildroot}%{_sysconfdir}/%{name}
 
 %check
-export FLASK_CONFIG=config.py
 %if %{with python3}
 py.test-3 -v %{modname}/tests
 %else
