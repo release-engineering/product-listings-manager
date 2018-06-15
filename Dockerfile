@@ -29,11 +29,20 @@ RUN yum -y remove git \
     && rm -rf /var/cache/yum \
     && rm -rf /tmp/*
 
-ENV FLASK_CONFIG="/var/www/product-listings-manager/config.py"
-RUN touch "$FLASK_CONFIG" \
-    && chown 1001:1001 "$FLASK_CONFIG"
+ARG cacert_url
+RUN if [ -n "$cacert_url" ]; then \
+        cd /etc/pki/ca-trust/source/anchors \
+        && curl -O --insecure $cacert_url \
+        && update-ca-trust extract; \
+    fi
 
 USER 1001
 EXPOSE 5000
 
-ENTRYPOINT [ "./server.sh" ]
+ENTRYPOINT [ \
+    "gunicorn", \
+    "--bind=0.0.0.0:5000", \
+    "--access-logfile=-", \
+    "--enable-stdio-inheritance", \
+    "product_listings_manager.wsgi" \
+    ]
