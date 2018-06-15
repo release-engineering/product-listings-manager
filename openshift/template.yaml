@@ -1,0 +1,151 @@
+# Template to produce a new environment in OpenShift.
+---
+apiVersion: v1
+kind: Template
+metadata:
+  name: product-listings-manager-template
+
+parameters:
+- name: TAG
+  displayName: Application tag
+  description: Short unique identifier for object names
+  required: true
+- name: DOCKER_TAG
+  displayName: Docker tag
+  description: Docker tag from registry
+  required: true
+- name: FLASK_SECRET_KEY
+  displayName: Flask secret key
+  generate: expression
+  from: "[\\w]{32}"
+- name: DBNAME
+  displayName: Database name
+  required: true
+- name: DBHOST
+  displayName: Database host
+  required: true
+- name: DBUSER
+  displayName: Database user
+  required: true
+- name: DBPASSWD
+  displayName: Database password
+  required: true
+
+objects:
+- apiVersion: v1
+  kind: ImageStream
+  metadata:
+    name: "plm-${TAG}-web"
+    labels:
+      environment: "${TAG}"
+  spec:
+    tags:
+    - name: "${DOCKER_TAG}"
+      importPolicy:
+        scheduled: true
+      from:
+        kind: DockerImage
+        name: "quay.io/redhat/product-listings-manager:${DOCKER_TAG}"
+
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: "plm-${TAG}-web"
+    labels:
+      environment: "${TAG}"
+  spec:
+    selector:
+      environment: "${TAG}"
+      service: web
+    ports:
+    - name: web
+      port: 80
+      targetPort: 5000
+
+- apiVersion: v1
+  kind: Route
+  metadata:
+    name: "plm-${TAG}-web"
+    labels:
+      environment: "${TAG}"
+  spec:
+    port:
+      targetPort: web
+    to:
+      kind: Service
+      name: "plm-${TAG}-web"
+    tls:
+      termination: edge
+      insecureEdgeTerminationPolicy: Redirect
+
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    name: "plm-${TAG}-web"
+    labels:
+      environment: "${TAG}"
+      service: web
+  spec:
+    replicas: 2
+    selector:
+      environment: "${TAG}"
+      service: web
+    template:
+      metadata:
+        labels:
+          environment: "${TAG}"
+          service: web
+      spec:
+        containers:
+        - name: "plm-${TAG}-web"
+          imagePullPolicy: Always
+          ports:
+          - containerPort: 5000
+          readinessProbe:
+            timeoutSeconds: 1
+            initialDelaySeconds: 5
+            httpGet:
+              path: /healthcheck
+              port: 5000
+          livenessProbe:
+            timeoutSeconds: 1
+            initialDelaySeconds: 30
+            httpGet:
+              path: /healthcheck
+              port: 5000
+          volumeMounts:
+          - mountPath: /etc/product-listings-manager
+            name: config-volume
+            readOnly: true
+          resources:
+            limits:
+              cpu: 100m
+              memory: 256Mi
+        volumes:
+        - name: config-volume
+          secret:
+            secretName: "plm-${TAG}-config"
+    triggers:
+    - type: ConfigChange
+    - type: ImageChange
+      imageChangeParams:
+        automatic: true
+        containerNames:
+        - "plm-${TAG}-web"
+        from:
+          kind: ImageStreamTag
+          name: "plm-${TAG}-web:${DOCKER_TAG}"
+
+- apiVersion: v1
+  kind: Secret
+  metadata:
+    name: "plm-${TAG}-config"
+    labels:
+      environment: "${TAG}"
+  stringData:
+    config.py: |-
+      DBNAME = '${DBNAME}'
+      DBHOST = '${DBHOST}'
+      DBUSER = '${DBUSER}'
+      DBPASSWD = '${DBPASSWD}'
+      SECRET_KEY = '${FLASK_SECRET_KEY}'
