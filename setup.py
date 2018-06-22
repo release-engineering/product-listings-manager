@@ -1,3 +1,4 @@
+import re
 import os
 from setuptools import setup, find_packages
 
@@ -6,7 +7,14 @@ readme = os.path.join(os.path.dirname(__file__), 'README.rst')
 LONG_DESCRIPTION = open(readme).read()
 
 
-version = '0.1.0'
+def read_module_contents():
+    with open('product_listings_manager/__init__.py') as init:
+        return init.read()
+
+
+module_file = read_module_contents()
+metadata = dict(re.findall("__([a-z]+)__\s*=\s*'([^']+)'", module_file))
+version = metadata['version']
 
 
 setup(name="product-listings-manager",
