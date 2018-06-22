@@ -12,7 +12,7 @@ Release: @RELEASE@%{?dist}
 Summary: HTTP interface to composedb
 
 License: MIT
-URL: https://github.com/ktdreyer/product-listings-manager
+URL: https://github.com/release-engineering/product-listings-manager
 Source0: %{name}-%{version}.tar.gz
 BuildArch: noarch
 
