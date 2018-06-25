@@ -14,10 +14,6 @@ parameters:
   displayName: Docker tag
   description: Docker tag from registry
   required: true
-- name: FLASK_SECRET_KEY
-  displayName: Flask secret key
-  generate: expression
-  from: "[\\w]{32}"
 - name: DBNAME
   displayName: Database name
   required: true
@@ -148,4 +144,3 @@ objects:
       DBHOST = '${DBHOST}'
       DBUSER = '${DBUSER}'
       DBPASSWD = '${DBPASSWD}'
-      SECRET_KEY = '${FLASK_SECRET_KEY}'
