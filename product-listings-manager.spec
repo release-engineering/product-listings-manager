@@ -7,8 +7,8 @@
 %global modname product_listings_manager
 
 Name: product-listings-manager
-Version: @VERSION@
-Release: @RELEASE@%{?dist}
+Version: 0.1.0
+Release: 1%{?dist}
 Summary: HTTP interface to composedb
 
 License: MIT

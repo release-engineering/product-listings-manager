@@ -13,4 +13,3 @@ doc/build/*
 /config.py
 /product-listings-manager.spec
 *.rpm
-/rpmbuild/
