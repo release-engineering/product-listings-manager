@@ -4,8 +4,6 @@ INSTALL_GIT := $(shell [ -f /usr/bin/git ] || $(INSTALLER) -y install git)
 
 NAME = product-listings-manager
 VERSION := $(shell git describe --tags --abbrev=0 --match 'v*' | sed 's/^v//')
-COMMIT := $(shell git rev-parse HEAD)
-SHORTCOMMIT := $(shell echo $(COMMIT) | cut -c1-7)
 RELEASE := $(shell git describe --tags --match 'v*' \
              | sed 's/^[^-]*-//' \
              | sed 's/-/./')
@@ -20,7 +18,6 @@ dist_dir = .
 
 # Testing only
 echo:
-	echo COMMIT $(COMMIT)
 	echo VERSION $(VERSION)
 	echo RELEASE $(RELEASE)
 	echo NVR $(NVR)
@@ -36,7 +33,6 @@ dist:
 
 spec:
 	sed $(NAME).spec.in \
-          -e 's/@COMMIT@/$(COMMIT)/' \
           -e 's/@VERSION@/$(VERSION)/' \
           -e 's/@RELEASE@/$(RELEASE)/' \
           > $(NAME).spec
