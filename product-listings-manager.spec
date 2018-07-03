@@ -7,8 +7,8 @@
 %global modname product_listings_manager
 
 Name: product-listings-manager
-Version: @VERSION@
-Release: @RELEASE@%{?dist}
+Version: 0.2.0
+Release: 1%{?dist}
 Summary: HTTP interface to composedb
 
 License: MIT
@@ -93,3 +93,17 @@ py.test-2.7 -v %{modname}/tests
 %endif
 
 %changelog
+* Tue Jul 03 2018 Lukas Holecek <lholecek@redhat.com> 0.2.0-1
+- Use sanitized SQL queries (lholecek@redhat.com)
+- drop optional FLASK_CONFIG during tests and packaging (kdreyer@redhat.com)
+- handle HTTP requests to "/api/v1.0/" (kdreyer@redhat.com)
+- handle HTTP requests to "/" (kdreyer@redhat.com)
+- JSON responses for 404 errors (kdreyer@redhat.com)
+- optionally load config from /etc or from FLASK_CONFIG (kdreyer@redhat.com)
+- Add support for mod_wsgi (lholecek@redhat.com)
+- set products.py posgres connection from Flask config (kdreyer@redhat.com)
+- Add REST API and split to multiple python submodules (lholecek@redhat.com)
+- switch to Flask-XML-RPC dependency (kdreyer@redhat.com)
+- add tests (kdreyer@redhat.com)
+- add README (kdreyer@redhat.com)
+- products.py: use "WHERE variable = ANY(ARRAY...)" (kdreyer@redhat.com)
