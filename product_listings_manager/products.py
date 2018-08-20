@@ -4,6 +4,27 @@ import koji
 import pgdb
 import re
 import sys
+import json
+from pymemcache.client.base import Client
+
+
+def json_serializer(key, value):
+    if type(value) == str:
+        return value, 1
+    return json.dumps(value), 2
+
+
+def json_deserializer(key, value, flags):
+    if flags == 1:
+        return value
+    if flags == 2:
+        return json.loads(value)
+    raise Exception("Unknown serialization format")
+
+
+client = Client(('localhost', 11211), serializer=json_serializer,
+                deserializer=json_deserializer)
+
 
 dbname = None  # eg. "compose"
 dbhost = None  # eg "db.example.com"
@@ -248,11 +269,18 @@ def getProductListings(productLabel, buildInfo):
     hub = conf['server']
     session = koji.ClientSession(hub, {})
 
-    build = session.getBuild(buildInfo, strict=True)
+    build = client.get('buildinfo_%s' % buildInfo)
+    if not build:
+        build = session.getBuild(buildInfo, strict=True)
+        client.set('buildinfo_%s' % buildInfo, build)
     sys.stderr.write("%r" % build)
     sys.stderr.flush()
-    rpms = session.listRPMs(buildID=build['id'])
+    rpms = client.get('rpms_build_%s' % build['id'])
     if not rpms:
+        rpms = session.listRPMs(buildID=build['id'])
+    if rpms:
+        client.set('rpms_build_%s' % build['id'], rpms)
+    else:
         raise koji.GenericError("Could not find any RPMs for build: %s" % buildInfo)
 
     # sort rpms, so first part of list consists of sorted 'normal' rpms and
