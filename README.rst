@@ -121,3 +121,8 @@ Alternatively, you can run pytest directly. In this example I add the
 
    $ pip install pytest
    $ python -m pytest --live product_listings_manager/tests/
+
+Configuring a local database
+----------------------------
+
+See ``database.rst`` for instructions to configure a local postgres instance.
