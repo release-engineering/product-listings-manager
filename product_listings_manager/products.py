@@ -272,7 +272,8 @@ def getProductListings(productLabel, buildInfo):
     build = client.get('buildinfo_%s' % buildInfo)
     if not build:
         build = session.getBuild(buildInfo, strict=True)
-        client.set('buildinfo_%s' % buildInfo, build)
+        if build and build['state'] == koji.BUILD_STATES['COMPLETE']:
+            client.set('buildinfo_%s' % buildInfo, build)
     sys.stderr.write("%r" % build)
     sys.stderr.flush()
     rpms = client.get('rpms_build_%s' % build['id'])
