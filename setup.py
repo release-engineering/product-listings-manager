@@ -40,6 +40,7 @@ setup(name="product-listings-manager",
         'Flask-Restful',
         'koji',
         'pygresql',
+        'pymemcache',
       ],
       tests_require=[
           'pytest',
