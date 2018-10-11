@@ -1,7 +1,7 @@
 from flask import Blueprint, url_for
 from flask_restful import Resource, Api
 
-from product_listings_manager import __version__, products
+from product_listings_manager import __version__, products, utils
 
 blueprint = Blueprint('api_v1', __name__)
 
@@ -28,13 +28,21 @@ class About(Resource):
 
 class ProductInfo(Resource):
     def get(self, label):
-        versions, variants = products.getProductInfo(label)
+        try:
+            versions, variants = products.getProductInfo(label)
+        except Exception:
+            utils.log_remote_call_error('API call getProductInfo() failed', label)
+            raise
         return [versions, variants]
 
 
 class ProductListings(Resource):
     def get(self, label, build_info):
-        return products.getProductListings(label, build_info)
+        try:
+            return products.getProductListings(label, build_info)
+        except Exception:
+            utils.log_remote_call_error('API call getProductListings() failed', label, build_info)
+            raise
 
 
 api = Api(blueprint)
