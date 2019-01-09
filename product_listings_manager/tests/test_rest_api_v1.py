@@ -16,6 +16,7 @@ class TestIndex(object):
         r = client.get('/api/v1.0/')
         expected_json = {
             'about_url': 'http://localhost/api/v1.0/about',
+            'module_product_listings_url': 'http://localhost/api/v1.0/module-product-listings/:label/:module_build_nvr',
             'product_info_url': 'http://localhost/api/v1.0/product-info/:label',
             'product_listings_url': 'http://localhost/api/v1.0/product-listings/:label/:build_info',
         }
@@ -60,3 +61,18 @@ class TestProductListings(object):
         r = client.get(path)
         assert r.status_code == 200
         assert r.get_json() == mock_get_product_listings.return_value
+
+
+class TestModuleProductListings(object):
+    product_label = 'RHEL-8.0.0'
+    nvr = 'ruby-2.5-820181217154935.9edba152'
+    product_listings_data = {
+        'AppStream-8.0.0': ['x86_64']
+    }
+
+    @patch('product_listings_manager.products.getModuleProductListings', return_value=product_listings_data)
+    def test_get_module_product_listings(self, mock_get_module_product_listings, client):
+        path = '/api/v1.0/module-product-listings/{0}/{1}'.format(self.product_label, self.nvr)
+        r = client.get(path)
+        assert r.status_code == 200
+        assert r.get_json() == mock_get_module_product_listings.return_value
