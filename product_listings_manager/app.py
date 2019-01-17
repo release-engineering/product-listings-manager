@@ -22,7 +22,7 @@ xmlrpc.handler.connect(app, '/xmlrpc')
 @app.errorhandler(404)
 def page_not_found_error(ex):
     if not request.path.startswith('/xmlrpc'):
-        return jsonify({'error': str(ex)})
+        return jsonify({'error': str(ex)}), 404
 
 
 if __name__ == '__main__':
