@@ -26,10 +26,19 @@ def get_build(nvr, session=None):
     """
     if session is None:
         session = get_koji_session()
-    build = session.getBuild(nvr, strict=True)
+
+    try:
+        build = session.getBuild(nvr, strict=True)
+    except koji.GenericError as ex:
+        raise ProductListingsNotFoundError(str(ex))
+
     sys.stderr.write("%r" % build)
     sys.stderr.flush()
     return build
+
+
+class ProductListingsNotFoundError(ValueError):
+    pass
 
 
 class Products(object):
@@ -81,10 +90,10 @@ class Products(object):
         versions.sort(Products.my_sort)
         versions.reverse()
 
-        if versions:
-            return (versions[0], [x[1] for x in products if x[0] == versions[0]])
-        else:
-            return None
+        if not versions:
+            raise ProductListingsNotFoundError("Could not find a product with label: %s" % product)
+
+        return (versions[0], [x[1] for x in products if x[0] == versions[0]])
     get_product_info = staticmethod(get_product_info)
 
     def get_overrides(compose_dbh, product, version, variant=None):
@@ -346,7 +355,7 @@ def getProductListings(productLabel, buildInfo):
 
     rpms = session.listRPMs(buildID=build['id'])
     if not rpms:
-        raise koji.GenericError("Could not find any RPMs for build: %s" % buildInfo)
+        raise ProductListingsNotFoundError("Could not find any RPMs for build: %s" % buildInfo)
 
     # sort rpms, so first part of list consists of sorted 'normal' rpms and
     # second part are sorted debuginfos
@@ -356,9 +365,6 @@ def getProductListings(productLabel, buildInfo):
     srpm = "%(package_name)s-%(version)s-%(release)s.src.rpm" % build
 
     prodinfo = Products.get_product_info(compose_dbh, productLabel)
-    if not prodinfo:
-        # no product with the given label exists
-        raise koji.GenericError("Could not find a product with label: %s" % productLabel)
     version, variants = prodinfo
 
     listings = {}

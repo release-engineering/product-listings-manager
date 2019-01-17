@@ -3,6 +3,7 @@ import pytest
 from mock import patch
 
 from product_listings_manager.app import app
+from product_listings_manager import products
 
 
 @pytest.yield_fixture
@@ -62,6 +63,15 @@ class TestProductListings(object):
         assert r.status_code == 200
         assert r.get_json() == mock_get_product_listings.return_value
 
+    @patch('product_listings_manager.products.getProductListings')
+    def test_product_listings_not_found(self, mock_get_product_listings, client):
+        error_message = 'NOT FOUND'
+        mock_get_product_listings.side_effect = products.ProductListingsNotFoundError(error_message)
+        path = '/api/v1.0/product-listings/{0}/{1}'.format(self.product_label, self.nvr)
+        r = client.get(path)
+        assert r.status_code == 404
+        assert r.get_json() == {'message': error_message}
+
 
 class TestModuleProductListings(object):
     product_label = 'RHEL-8.0.0'
@@ -76,3 +86,12 @@ class TestModuleProductListings(object):
         r = client.get(path)
         assert r.status_code == 200
         assert r.get_json() == mock_get_module_product_listings.return_value
+
+    @patch('product_listings_manager.products.getModuleProductListings')
+    def test_product_listings_not_found(self, mock_get_module_product_listings, client):
+        error_message = 'NOT FOUND'
+        mock_get_module_product_listings.side_effect = products.ProductListingsNotFoundError(error_message)
+        path = '/api/v1.0/module-product-listings/{0}/{1}'.format(self.product_label, self.nvr)
+        r = client.get(path)
+        assert r.status_code == 404
+        assert r.get_json() == {'message': error_message}
