@@ -10,6 +10,7 @@ pytestmark = pytest.mark.skipif(
     reason='use --live argument to query production servers'
 )
 
+
 @pytest.fixture(scope='module')
 def dbh():
     return Products.compose_get_dbh()
