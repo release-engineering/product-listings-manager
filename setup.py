@@ -13,36 +13,37 @@ def read_module_contents():
 
 
 module_file = read_module_contents()
-metadata = dict(re.findall("__([a-z]+)__\s*=\s*'([^']+)'", module_file))
+metadata = dict(re.findall(r"__([a-z]+)__\s*=\s*'([^']+)'", module_file))
 version = metadata['version']
 
 
-setup(name="product-listings-manager",
-      version=version,
-      description='query product listings data in composedb',
-      classifiers=['Development Status :: 4 - Beta',
-                   'License :: OSI Approved :: MIT License',
-                   'Intended Audience :: Developers',
-                   'Operating System :: POSIX',
-                   'Programming Language :: Python',
-                   'Topic :: Software Development',
-                   ],
-      keywords='product compose',
-      author='Ken Dreyer',
-      author_email='kdreyer@redhat.com',
-      url='https://github.com/release-engineering/product-listings-manager',
-      license='MIT',
-      long_description=LONG_DESCRIPTION,
-      packages=find_packages(),
-      install_requires=[
+setup(
+    name="product-listings-manager",
+    version=version,
+    description='query product listings data in composedb',
+    classifiers=['Development Status :: 4 - Beta',
+                 'License :: OSI Approved :: MIT License',
+                 'Intended Audience :: Developers',
+                 'Operating System :: POSIX',
+                 'Programming Language :: Python',
+                 'Topic :: Software Development',
+                 ],
+    keywords='product compose',
+    author='Ken Dreyer',
+    author_email='kdreyer@redhat.com',
+    url='https://github.com/release-engineering/product-listings-manager',
+    license='MIT',
+    long_description=LONG_DESCRIPTION,
+    packages=find_packages(),
+    install_requires=[
         'Flask',
         'Flask-XML-RPC',
         'Flask-Restful',
         'koji',
         'pygresql',
-      ],
-      tests_require=[
-          'pytest',
-          'mock',
-      ],
+    ],
+    tests_require=[
+        'pytest',
+        'mock',
+    ],
 )

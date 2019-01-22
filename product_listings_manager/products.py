@@ -1,4 +1,4 @@
-#koji hub plugin
+# koji hub plugin
 
 import koji
 import pgdb
@@ -36,12 +36,12 @@ class Products(object):
     """
     Class to hold methods related to product information.
     """
-    all_release_types = [ re.compile("^TEST\d*", re.I),
-                          re.compile("^ALPHA\d*", re.I),
-                          re.compile("^BETA\d*", re.I),
-                          re.compile("^RC\d*", re.I),
-                          re.compile("^GOLD", re.I),
-                          re.compile("^U\d+(-beta)?$", re.I) ]
+    all_release_types = [re.compile(r"^TEST\d*", re.I),
+                         re.compile(r"^ALPHA\d*", re.I),
+                         re.compile(r"^BETA\d*", re.I),
+                         re.compile(r"^RC\d*", re.I),
+                         re.compile(r"^GOLD", re.I),
+                         re.compile(r"^U\d+(-beta)?$", re.I)]
 
     def score(release):
         map = Products.all_release_types
@@ -186,10 +186,10 @@ class Products(object):
             id = row[0]
             arch = row[1]
             if row[2]:
-                if not compat_trees.has_key(arch):
+                if arch not in compat_trees:
                     compat_trees[arch] = id
             else:
-                if not trees.has_key(arch):
+                if arch not in trees:
                     trees[arch] = id
         return trees.values() + compat_trees.values()
     precalc_treelist = staticmethod(precalc_treelist)
@@ -237,7 +237,7 @@ class Products(object):
             if koji.is_debuginfo(name) and not ret.get(name, {}):
                 ret[name] = cache_entry
 
-            if overrides and overrides.has_key(name) and overrides[name].has_key(src_arch) and not version:
+            if overrides and name in overrides and src_arch in overrides[name] and not version:
                 for tree_arch, include in overrides[name][src_arch].items():
                     if include:
                         ret.setdefault(name, {}).setdefault(tree_arch, 1)
@@ -328,11 +328,13 @@ class Products(object):
         return [row[0] for row in rows]
     get_module_overrides = staticmethod(get_module_overrides)
 
+
 def getProductInfo(label):
     """
     Get a list of the versions and variants of a product with the given label.
     """
     return Products.get_product_info(Products.compose_get_dbh(), label)
+
 
 def getProductListings(productLabel, buildInfo):
     """
@@ -364,7 +366,7 @@ def getProductListings(productLabel, buildInfo):
     listings = {}
     match_version = Products.get_match_versions(compose_dbh, productLabel)
     for variant in variants:
-        if variant == None:
+        if variant is None:
             # dict keys must be a string
             variant = ''
         treelist = Products.precalc_treelist(compose_dbh, productLabel, version, variant)
@@ -383,10 +385,11 @@ def getProductListings(productLabel, buildInfo):
         d = {}
         all_archs = set([rpm['arch'] for rpm in rpms_nondebug])
         for arch in all_archs:
-            d[arch] = Products.dest_get_archs(compose_dbh, treelist,
-                      arch, [rpm['name'] for rpm in rpms_nondebug if rpm['arch'] == arch],
-                      cache_map.get(srpm, {}).get(arch, {}),
-                      rpm_version, overrides,)
+            d[arch] = Products.dest_get_archs(
+                compose_dbh, treelist,
+                arch, [rpm['name'] for rpm in rpms_nondebug if rpm['arch'] == arch],
+                cache_map.get(srpm, {}).get(arch, {}),
+                rpm_version, overrides,)
 
         for rpm in rpms_nondebug:
             dest_archs = d[rpm['arch']].get(rpm['name'], {}).keys()
@@ -403,10 +406,11 @@ def getProductListings(productLabel, buildInfo):
         d = {}
         all_archs = set([rpm['arch'] for rpm in rpms_debug])
         for arch in all_archs:
-            d[arch] = Products.dest_get_archs(compose_dbh, treelist,
-                      arch, [rpm['name'] for rpm in rpms_debug if rpm['arch'] == arch],
-                      cache_map.get(srpm, {}).get(arch, {}),
-                      rpm_version, overrides,)
+            d[arch] = Products.dest_get_archs(
+                compose_dbh, treelist,
+                arch, [rpm['name'] for rpm in rpms_debug if rpm['arch'] == arch],
+                cache_map.get(srpm, {}).get(arch, {}),
+                rpm_version, overrides,)
 
         for rpm in rpms_debug:
             dest_archs = d[rpm['arch']].get(rpm['name'], {}).keys()
@@ -420,11 +424,11 @@ def getProductListings(productLabel, buildInfo):
 
         for variant in listings.keys():
             nvrs = listings[variant].keys()
-            #BREW-260: Read allow_src_only flag for the product/version
+            # BREW-260: Read allow_src_only flag for the product/version
             allow_src_only = Products.get_srconly_flag(compose_dbh, productLabel, version)
             if len(nvrs) == 1:
                 maps = listings[variant][nvrs[0]].keys()
-                #BREW-260: check for allow_src_only flag added
+                # BREW-260: check for allow_src_only flag added
                 if len(maps) == 1 and maps[0] == 'src' and not allow_src_only:
                     del listings[variant]
     return listings
