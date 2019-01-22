@@ -1,6 +1,7 @@
 from product_listings_manager.products import Products
 from product_listings_manager.products import getProductInfo
 from product_listings_manager.products import getProductListings
+from product_listings_manager.products import getModuleProductListings
 import pytest
 
 
@@ -51,6 +52,15 @@ class TestProductLive(object):
     def test_dest_get_archs(self):
         pass
 
+    def test_get_module(self):
+        pass
+
+    def test_get_module_overrides(self):
+        pass
+
+    def test_precalc_module_trees(self):
+        pass
+
 
 class TestGetProductInfo(object):
 
@@ -74,4 +84,16 @@ class TestGetProductListings(object):
               {'x86_64': ['x86_64']},
               }
              }
+        assert result == expected
+
+
+class TestGetModuleProductListings(object):
+
+    def test_getModuleProductListings(self):
+        label = 'RHEL-8.0.0'
+        module = 'ruby-2.5-820181217154935.9edba152'
+        result = getModuleProductListings(label, module)
+        expected = {
+            'AppStream-8.0.0': ['x86_64']
+        }
         assert result == expected

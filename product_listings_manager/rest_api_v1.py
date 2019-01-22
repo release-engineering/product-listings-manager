@@ -18,6 +18,10 @@ class Index(Resource):
                                             label=':label',
                                             build_info=':build_info',
                                             _external=True),
+            'module_product_listings_url': url_for('.moduleproductlistings',
+                                                   label=':label',
+                                                   module_build_nvr=':module_build_nvr',
+                                                   _external=True),
         }
 
 
@@ -45,8 +49,18 @@ class ProductListings(Resource):
             raise
 
 
+class ModuleProductListings(Resource):
+    def get(self, label, module_build_nvr):
+        try:
+            return products.getModuleProductListings(label, module_build_nvr)
+        except Exception:
+            utils.log_remote_call_error('API call getModuleProductListings() failed', label, module_build_nvr)
+            raise
+
+
 api = Api(blueprint)
 api.add_resource(Index, '/')
 api.add_resource(About, '/about')
 api.add_resource(ProductInfo, '/product-info/<label>')
 api.add_resource(ProductListings, '/product-listings/<label>/<build_info>')
+api.add_resource(ModuleProductListings, '/module-product-listings/<label>/<module_build_nvr>')

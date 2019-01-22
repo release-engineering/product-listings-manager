@@ -11,6 +11,27 @@ dbuser = None  # eg. "myuser"
 dbpasswd = None  # eg. "mypassword"
 
 
+def get_koji_session():
+    """
+    Get a koji session for accessing kojihub functions.
+    """
+    conf = koji.read_config('brew')
+    hub = conf['server']
+    return koji.ClientSession(hub, {})
+
+
+def get_build(nvr, session=None):
+    """
+    Get a build from kojihub.
+    """
+    if session is None:
+        session = get_koji_session()
+    build = session.getBuild(nvr, strict=True)
+    sys.stderr.write("%r" % build)
+    sys.stderr.flush()
+    return build
+
+
 class Products(object):
     """
     Class to hold methods related to product information.
@@ -230,6 +251,83 @@ class Products(object):
         return pgdb.connect(database=dbname, host=dbhost, user=dbuser, password=dbpasswd)
     compose_get_dbh = staticmethod(compose_get_dbh)
 
+    def get_module(compose_dbh, name, stream, version):
+        qargs = dict(name=name, stream=stream, version=version)
+        qry = """
+            SELECT id
+            FROM modules
+            WHERE name = %(name)s
+            AND stream = %(stream)s
+            AND version = %(version)s
+            """
+        dbc = compose_dbh.cursor()
+        Products.execute_query(dbc, qry, **qargs)
+        module = dbc.fetchone()
+        return module
+    get_module = staticmethod(get_module)
+
+    def precalc_module_trees(compose_dbh, product, version, module_id, variant=None):
+        '''Returns dict {tree_id: arch}.
+
+        Looks in the compose db for a list of trees (one per arch) that are the most
+        recent for the particular product specified.'''
+
+        qargs = dict(product=product, version=version, module_id=module_id)
+        if variant:
+            variant_clause = "products.variant = %(variant)s"
+            qargs['variant'] = variant
+        else:
+            variant_clause = "products.variant is NULL"
+
+        qry = """
+            SELECT trees.id, arch
+            FROM trees, products, tree_product_map, tree_modules
+            WHERE imported = 1
+            AND trees.id = tree_product_map.tree_id
+            AND products.id = tree_product_map.product_id
+            AND tree_modules.trees_id = trees.id
+            AND tree_modules.modules_id = %(module_id)d
+            AND products.label = %(product)s
+            AND products.version = %(version)s
+            AND """ + variant_clause + """
+            order by date desc, id desc
+            """
+        dbc = compose_dbh.cursor()
+        Products.execute_query(dbc, qry, **qargs)
+
+        rows = dbc.fetchall()
+        return {tree_id: arch for tree_id, arch in reversed(rows)}
+    precalc_module_trees = staticmethod(precalc_module_trees)
+
+    def get_module_overrides(compose_dbh, product, version, module_name, module_stream, variant=None):
+        '''Returns the list of module overrides for the particular product specified.'''
+
+        qargs = dict(product=product, version=version, module_name=module_name, module_stream=module_stream)
+        if variant:
+            variant_clause = "products.variant = %(variant)s"
+            qargs['variant'] = variant
+        else:
+            variant_clause = "products.variant is NULL"
+
+        qry = """
+            SELECT product_arch
+            FROM module_overrides, products, trees, tree_product_map
+            WHERE products.label = %(product)s
+            AND products.version = %(version)s
+            AND module_overrides.name = %(module_name)s
+            AND module_overrides.stream = %(module_stream)s
+            AND module_overrides.product = products.id
+            AND tree_product_map.product_id = products.id
+            AND tree_product_map.tree_id = trees.id
+            AND """ + variant_clause
+
+        dbc = compose_dbh.cursor()
+        Products.execute_query(dbc, qry, **qargs)
+        rows = dbc.fetchall()
+
+        return [row[0] for row in rows]
+    get_module_overrides = staticmethod(get_module_overrides)
+
 def getProductInfo(label):
     """
     Get a list of the versions and variants of a product with the given label.
@@ -243,14 +341,9 @@ def getProductListings(productLabel, buildInfo):
     """
     compose_dbh = Products.compose_get_dbh()
 
-    #XXX - need access to hub kojihub functions
-    conf = koji.read_config('brew')
-    hub = conf['server']
-    session = koji.ClientSession(hub, {})
+    session = get_koji_session()
+    build = get_build(buildInfo, session)
 
-    build = session.getBuild(buildInfo, strict=True)
-    sys.stderr.write("%r" % build)
-    sys.stderr.flush()
     rpms = session.listRPMs(buildID=build['id'])
     if not rpms:
         raise koji.GenericError("Could not find any RPMs for build: %s" % buildInfo)
@@ -334,4 +427,49 @@ def getProductListings(productLabel, buildInfo):
                 #BREW-260: check for allow_src_only flag added
                 if len(maps) == 1 and maps[0] == 'src' and not allow_src_only:
                     del listings[variant]
+    return listings
+
+
+def getModuleProductListings(productLabel, moduleNVR):
+    """
+    Get a map of which variants of the given product included the given module,
+    and which arches each variant included.
+    """
+    compose_dbh = Products.compose_get_dbh()
+
+    build = get_build(moduleNVR)
+    try:
+        module = build['extra']['typeinfo']['module']
+        module_name = module['name']
+        module_stream = module['stream']
+        module_version = module['version']
+    except KeyError:
+        raise koji.GenericError("It's not a module build: %s" % moduleNVR)
+
+    prodinfo = Products.get_product_info(compose_dbh, productLabel)
+    if not prodinfo:
+        # no product with the given label exists
+        raise koji.GenericError("Could not find a product with label: %s" % productLabel)
+    version, variants = prodinfo
+
+    module = Products.get_module(compose_dbh, module_name, module_stream, module_version)
+    if not module:
+        raise koji.GenericError("Could not find a module build with NVR: %s" % moduleNVR)
+    module_id = module[0]
+
+    listings = {}
+    for variant in variants:
+        if variant is None:
+            # dict keys must be a string
+            variant = ''
+        trees = Products.precalc_module_trees(compose_dbh, productLabel, version, module_id, variant)
+
+        overrides = Products.get_module_overrides(
+            compose_dbh, productLabel, version, module_name, module_stream, variant)
+
+        archs = sorted(set(trees.values() + overrides))
+
+        if archs:
+            listings.setdefault(variant, archs)
+
     return listings
