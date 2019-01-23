@@ -101,13 +101,13 @@ objects:
             timeoutSeconds: 1
             initialDelaySeconds: 5
             httpGet:
-              path: /healthcheck
+              path: /
               port: 5000
           livenessProbe:
             timeoutSeconds: 1
             initialDelaySeconds: 30
             httpGet:
-              path: /healthcheck
+              path: /
               port: 5000
           volumeMounts:
           - mountPath: /etc/product-listings-manager
