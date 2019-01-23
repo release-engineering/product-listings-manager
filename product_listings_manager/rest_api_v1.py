@@ -3,6 +3,8 @@ from flask_restful import Resource, Api
 
 from product_listings_manager import __version__, products, utils
 
+from werkzeug.exceptions import NotFound
+
 blueprint = Blueprint('api_v1', __name__)
 
 
@@ -34,6 +36,8 @@ class ProductInfo(Resource):
     def get(self, label):
         try:
             versions, variants = products.getProductInfo(label)
+        except products.ProductListingsNotFoundError as ex:
+            raise NotFound(str(ex))
         except Exception:
             utils.log_remote_call_error('API call getProductInfo() failed', label)
             raise
@@ -44,6 +48,8 @@ class ProductListings(Resource):
     def get(self, label, build_info):
         try:
             return products.getProductListings(label, build_info)
+        except products.ProductListingsNotFoundError as ex:
+            raise NotFound(str(ex))
         except Exception:
             utils.log_remote_call_error('API call getProductListings() failed', label, build_info)
             raise
@@ -53,6 +59,8 @@ class ModuleProductListings(Resource):
     def get(self, label, module_build_nvr):
         try:
             return products.getModuleProductListings(label, module_build_nvr)
+        except products.ProductListingsNotFoundError as ex:
+            raise NotFound(str(ex))
         except Exception:
             utils.log_remote_call_error('API call getModuleProductListings() failed', label, module_build_nvr)
             raise
