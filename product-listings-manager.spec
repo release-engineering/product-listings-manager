@@ -7,7 +7,7 @@
 %global modname product_listings_manager
 
 Name: product-listings-manager
-Version: 0.2.0
+Version: 0.3.0
 Release: 1%{?dist}
 Summary: HTTP interface to composedb
 
@@ -93,6 +93,16 @@ py.test-2.7 -v %{modname}/tests
 %endif
 
 %changelog
+* Wed Feb 13 2019 Haibo Lin <hlin@redhat.com> 0.3.0-1
+- openshift: Change health check path (hlin@redhat.com)
+- Fix product listings not found error (hluk@email.cz)
+- Follow flake8 convention (hlin@redhat.com)
+- Add module product listings REST API (hlin@redhat.com)
+- Fix HTTP 404 response code (hluk@email.cz)
+- Log remote IP, traceback and arguments of remote call on error
+  (hluk@email.cz)
+- add database documentation (kdreyer@redhat.com)
+
 * Tue Jul 03 2018 Lukas Holecek <lholecek@redhat.com> 0.2.0-1
 - Use sanitized SQL queries (lholecek@redhat.com)
 - drop optional FLASK_CONFIG during tests and packaging (kdreyer@redhat.com)
