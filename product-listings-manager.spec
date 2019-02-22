@@ -7,7 +7,7 @@
 %global modname product_listings_manager
 
 Name: product-listings-manager
-Version: 0.3.0
+Version: 0.3.1
 Release: 1%{?dist}
 Summary: HTTP interface to composedb
 
@@ -93,6 +93,9 @@ py.test-2.7 -v %{modname}/tests
 %endif
 
 %changelog
+* Fri Feb 22 2019 Haibo Lin <hlin@redhat.com> 0.3.1-1
+- Response 404 for module product listings not found error (hlin@redhat.com)
+
 * Wed Feb 13 2019 Haibo Lin <hlin@redhat.com> 0.3.0-1
 - openshift: Change health check path (hlin@redhat.com)
 - Fix product listings not found error (hluk@email.cz)
