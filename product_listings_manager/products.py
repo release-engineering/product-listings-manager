@@ -260,14 +260,13 @@ class Products(object):
         return pgdb.connect(database=dbname, host=dbhost, user=dbuser, password=dbpasswd)
     compose_get_dbh = staticmethod(compose_get_dbh)
 
-    def get_module(compose_dbh, name, stream, version):
-        qargs = dict(name=name, stream=stream, version=version)
+    def get_module(compose_dbh, name, stream):
+        qargs = dict(name=name, stream=stream)
         qry = """
             SELECT id
             FROM modules
             WHERE name = %(name)s
             AND stream = %(stream)s
-            AND version = %(version)s
             """
         dbc = compose_dbh.cursor()
         Products.execute_query(dbc, qry, **qargs)
@@ -452,14 +451,13 @@ def getModuleProductListings(productLabel, moduleNVR):
         module = build['extra']['typeinfo']['module']
         module_name = module['name']
         module_stream = module['stream']
-        module_version = module['version']
     except (KeyError, TypeError):
         raise ProductListingsNotFoundError("It's not a module build: %s" % moduleNVR)
 
     prodinfo = Products.get_product_info(compose_dbh, productLabel)
     version, variants = prodinfo
 
-    module = Products.get_module(compose_dbh, module_name, module_stream, module_version)
+    module = Products.get_module(compose_dbh, module_name, module_stream)
     if not module:
         raise ProductListingsNotFoundError("Could not find a module build with NVR: %s" % moduleNVR)
     module_id = module[0]
