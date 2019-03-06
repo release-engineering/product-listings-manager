@@ -94,4 +94,4 @@ class TestModuleProductListings(object):
         path = '/api/v1.0/module-product-listings/{0}/{1}'.format(self.product_label, self.nvr)
         r = client.get(path)
         assert r.status_code == 404
-        assert r.get_json() == {'message': error_message}
+        assert error_message in r.get_json().get('message', '')

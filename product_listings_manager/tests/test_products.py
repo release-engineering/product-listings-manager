@@ -92,9 +92,9 @@ class TestGetModuleProductListings(object):
 
     def test_getModuleProductListings(self):
         label = 'RHEL-8.0.0'
-        module = 'ruby-2.5-820181217154935.9edba152'
+        module = 'ruby-2.5-820190111110530.9edba152'
         result = getModuleProductListings(label, module)
         expected = {
-            'AppStream-8.0.0': ['x86_64']
+            'AppStream-8.0.0': ['aarch64', 'ppc64le', 's390x', 'x86_64']
         }
         assert result == expected
