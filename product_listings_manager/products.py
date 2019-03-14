@@ -1,5 +1,6 @@
 # koji hub plugin
 
+import copy
 import koji
 import pgdb
 import re
@@ -244,7 +245,7 @@ class Products(object):
         for name in names:
             # use cached map entry if there are no records from treetables
             if koji.is_debuginfo(name) and not ret.get(name, {}):
-                ret[name] = cache_entry
+                ret[name] = copy.deepcopy(cache_entry)
 
             if overrides and name in overrides and src_arch in overrides[name] and not version:
                 for tree_arch, include in overrides[name][src_arch].items():
