@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify
 
 from product_listings_manager import root, rest_api_v1, xmlrpc
 from product_listings_manager import products
+from product_listings_manager.logger import init_logging
 
 
 def page_not_found_error(ex):
@@ -12,6 +13,7 @@ def page_not_found_error(ex):
 def create_app():
     app = Flask(__name__)
 
+    init_logging(app)
     app.register_error_handler(404, page_not_found_error)
 
     # Set products.py's DB values from our Flask config:
