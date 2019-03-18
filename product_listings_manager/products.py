@@ -268,6 +268,7 @@ class Products(object):
             FROM modules
             WHERE name = %(name)s
             AND stream = %(stream)s
+            ORDER BY version DESC
             """
         dbc = compose_dbh.cursor()
         Products.execute_query(dbc, qry, **qargs)
