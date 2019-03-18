@@ -1,11 +1,11 @@
 import pytest
 
-from product_listings_manager.app import app
+from product_listings_manager.app import create_app
 
 
 @pytest.yield_fixture
 def client():
-    client = app.test_client()
+    client = create_app().test_client()
     yield client
 
 

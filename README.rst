@@ -81,10 +81,10 @@ Installation and setup
    $ cp product_listings_manager/config.py config.py
    $ vi config.py
 
-6. Set the ``FLASK_CONFIG`` environment variable to the full filesystem path of
+6. Set the ``PLM_CONFIG_FILE`` environment variable to the full filesystem path of
    this new file::
 
-   $ export FLASK_CONFIG=$(pwd)/config.py
+   $ export PLM_CONFIG_FILE=$(pwd)/config.py
 
 7. Install brewkoji package. This creates ``/etc/koji.conf.d/brewkoji.conf``,
    so ``products.py`` can contact the Brew hub::
