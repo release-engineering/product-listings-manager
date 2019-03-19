@@ -7,6 +7,9 @@ product-listings-manager
 .. image:: https://copr.fedorainfracloud.org/coprs/ktdreyer/product-listings-manager/package/product-listings-manager/status_image/last_build.png
           :target: https://copr.fedorainfracloud.org/coprs/ktdreyer/product-listings-manager/package/product-listings-manager/
 
+.. image:: https://quay.io/repository/redhat/product-listings-manager/status
+          :target: https://quay.io/repository/redhat/product-listings-manager
+
 HTTP interface for finding product listings and interacting with data in
 composedb.
 
