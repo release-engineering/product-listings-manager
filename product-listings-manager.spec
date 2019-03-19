@@ -7,7 +7,7 @@
 %global modname product_listings_manager
 
 Name: product-listings-manager
-Version: 0.3.2
+Version: 0.3.3
 Release: 1%{?dist}
 Summary: HTTP interface to composedb
 
@@ -93,6 +93,10 @@ py.test-2.7 -v %{modname}/tests
 %endif
 
 %changelog
+* Mon Mar 18 2019 Haibo Lin <hlin@redhat.com> 0.3.3-1
+- Use latest module record (hlin@redhat.com)
+- Fix positive overrides ignored issue (hlin@redhat.com)
+
 * Fri Mar 08 2019 Haibo Lin <hlin@redhat.com> 0.3.2-1
 - Fix tests (hluk@email.cz)
 - Get module builds based on name and stream only (lsedlar@redhat.com)
