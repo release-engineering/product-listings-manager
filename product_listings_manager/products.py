@@ -2,14 +2,16 @@
 
 import copy
 import koji
+import logging
 import pgdb
 import re
-import sys
 
 dbname = None  # eg. "compose"
 dbhost = None  # eg "db.example.com"
 dbuser = None  # eg. "myuser"
 dbpasswd = None  # eg. "mypassword"
+
+logger = logging.getLogger(__name__)
 
 
 def get_koji_session():
@@ -33,8 +35,7 @@ def get_build(nvr, session=None):
     except koji.GenericError as ex:
         raise ProductListingsNotFoundError(str(ex))
 
-    sys.stderr.write("%r" % build)
-    sys.stderr.flush()
+    logger.debug('Build info: {}'.format(build))
     return build
 
 
