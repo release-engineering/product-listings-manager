@@ -38,7 +38,10 @@ setup(
     install_requires=[
         'Flask',
         'Flask-Restful',
+        'Flask-SQLAlchemy',
+        'SQLAlchemy',
         'koji',
+        'psycopg2-binary',
         'pygresql',
     ],
     tests_require=[

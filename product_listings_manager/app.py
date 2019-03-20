@@ -3,6 +3,7 @@ from flask import Flask, jsonify
 from product_listings_manager import root, rest_api_v1
 from product_listings_manager import products
 from product_listings_manager.logger import init_logging
+from product_listings_manager.models import db
 
 
 def page_not_found_error(ex):
@@ -23,6 +24,15 @@ def create_app():
     products.dbhost = app.config['DBHOST']  # eg "db.example.com"
     products.dbuser = app.config['DBUSER']  # eg. "myuser"
     products.dbpasswd = app.config['DBPASSWD']  # eg. "mypassword"
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://{}:{}@{}/{}'.format(
+        app.config['DBUSER'], app.config['DBPASSWD'], app.config['DBHOST'], app.config['DBNAME'])
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    app.config['SQLALCHEMY_ECHO'] = False
+    if app.debug:
+        app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = True
+        app.config['SQLALCHEMY_ECHO'] = True
+
+    db.init_app(app)
 
     app.register_blueprint(root.blueprint, url_prefix='/')
     app.register_blueprint(rest_api_v1.blueprint, url_prefix='/api/v1.0')
