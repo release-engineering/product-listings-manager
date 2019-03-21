@@ -2,6 +2,7 @@ from product_listings_manager.products import Products
 from product_listings_manager.products import getProductInfo
 from product_listings_manager.products import getProductListings
 from product_listings_manager.products import getModuleProductListings
+from product_listings_manager.products import getProductLabels
 import pytest
 
 
@@ -98,3 +99,14 @@ class TestGetModuleProductListings(object):
             'AppStream-8.0.0': ['aarch64', 'ppc64le', 's390x', 'x86_64']
         }
         assert result == expected
+
+
+class TestProductLabels(object):
+
+    def test_getProductLabels(self):
+        result = getProductLabels()
+        assert len(result) > 1200
+        print(result)
+        assert {'label': 'RHEL-6'} in result
+        assert {'label': 'RHEL-6-Client'} in result
+        assert {'label': 'RHEL-6-Server'} in result
