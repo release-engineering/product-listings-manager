@@ -1,3 +1,4 @@
+from product_listings_manager.app import create_app
 from product_listings_manager.products import Products
 from product_listings_manager.products import getProductInfo
 from product_listings_manager.products import getProductListings
@@ -13,8 +14,10 @@ pytestmark = pytest.mark.skipif(
 
 
 @pytest.fixture(scope='module')
-def dbh():
-    return Products.compose_get_dbh()
+def app():
+    app = create_app()
+    with app.app_context():
+        yield app
 
 
 class TestProductLive(object):
@@ -29,14 +32,9 @@ class TestProductLive(object):
         # assert Products.my_sort(x, y) == ???
         pass
 
-    def test_execute_query(self):
-        # assert Products.execute_query('FOO')
-        # assert Products.execute_query('FOO', args)
-        pass
-
-    def test_get_product_info(self, dbh):
+    def test_get_product_info(self, app):
         product = 'RHEL-6-Server-EXTRAS-6'
-        result = Products.get_product_info(dbh, product)
+        result = Products.get_product_info(product)
         assert result == ('6.9', ['EXTRAS-6'])
 
     def test_get_overrides(self):
@@ -66,7 +64,7 @@ class TestProductLive(object):
 
 class TestGetProductInfo(object):
 
-    def test_simple(self):
+    def test_simple(self, app):
         label = 'RHEL-6-Server-EXTRAS-6'
         result = getProductInfo(label)
         assert result == ('6.9', ['EXTRAS-6'])
@@ -74,7 +72,7 @@ class TestGetProductInfo(object):
 
 class TestGetProductListings(object):
 
-    def test_simple(self):
+    def test_simple(self, app):
         label = 'RHEL-6-Server-EXTRAS-6'
         build = 'dumb-init-1.2.0-1.20170802gitd283f8a.el6'
         result = getProductListings(label, build)
@@ -91,7 +89,7 @@ class TestGetProductListings(object):
 
 class TestGetModuleProductListings(object):
 
-    def test_getModuleProductListings(self):
+    def test_getModuleProductListings(self, app):
         label = 'RHEL-8.0.0'
         module = 'ruby-2.5-820190111110530.9edba152'
         result = getModuleProductListings(label, module)
@@ -103,10 +101,9 @@ class TestGetModuleProductListings(object):
 
 class TestProductLabels(object):
 
-    def test_getProductLabels(self):
+    def test_getProductLabels(self, app):
         result = getProductLabels()
         assert len(result) > 1200
-        print(result)
         assert {'label': 'RHEL-6'} in result
         assert {'label': 'RHEL-6-Client'} in result
         assert {'label': 'RHEL-6-Server'} in result

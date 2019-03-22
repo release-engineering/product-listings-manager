@@ -42,7 +42,6 @@ setup(
         'SQLAlchemy',
         'koji',
         'psycopg2-binary',
-        'pygresql',
     ],
     tests_require=[
         'pytest',
