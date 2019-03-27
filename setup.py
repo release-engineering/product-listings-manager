@@ -37,7 +37,6 @@ setup(
     packages=find_packages(),
     install_requires=[
         'Flask',
-        'Flask-XML-RPC',
         'Flask-Restful',
         'koji',
         'pygresql',

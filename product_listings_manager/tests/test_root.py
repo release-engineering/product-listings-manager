@@ -16,7 +16,6 @@ class TestRoot(object):
         expected_json = {
             'api_v1_url': 'http://localhost/api/v1.0/',
             'documentation_url': expected_docs,
-            'xmlrpc_url': 'http://localhost/xmlrpc',
         }
         assert r.status_code == 200
         assert r.get_json() == expected_json
