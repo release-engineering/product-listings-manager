@@ -1,13 +1,12 @@
-from flask import Flask, request, jsonify
+from flask import Flask, jsonify
 
-from product_listings_manager import root, rest_api_v1, xmlrpc
+from product_listings_manager import root, rest_api_v1
 from product_listings_manager import products
 from product_listings_manager.logger import init_logging
 
 
 def page_not_found_error(ex):
-    if not request.path.startswith('/xmlrpc'):
-        return jsonify({'error': str(ex)}), 404
+    return jsonify({'error': str(ex)}), 404
 
 
 def create_app():
@@ -27,5 +26,4 @@ def create_app():
 
     app.register_blueprint(root.blueprint, url_prefix='/')
     app.register_blueprint(rest_api_v1.blueprint, url_prefix='/api/v1.0')
-    xmlrpc.handler.connect(app, '/xmlrpc')
     return app

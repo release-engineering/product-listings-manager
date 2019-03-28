@@ -19,28 +19,24 @@ BuildArch: noarch
 %if %{with python3}
 BuildRequires: python3-devel
 BuildRequires: python3-flask
-BuildRequires: python3-flask-xml-rpc
 BuildRequires: python3-flask-restful
 BuildRequires: python3-koji
 BuildRequires: python3-pygresql
 BuildRequires: python3-pytest
 BuildRequires: python3-mock
 Requires: python3-flask
-Requires: python3-flask-xml-rpc
 Requires: python3-flask-restful
 Requires: python3-koji
 Requires: python3-pygresql
 %else
 BuildRequires: python2-devel
 BuildRequires: python-flask
-BuildRequires: python-flask-xml-rpc
 BuildRequires: python2-flask-restful
 BuildRequires: python2-koji
 BuildRequires: PyGreSQL
 BuildRequires: pytest
 BuildRequires: python-mock
 Requires: python-flask
-Requires: python-flask-xml-rpc
 Requires: python2-flask-restful
 Requires: python2-koji
 Requires: PyGreSQL

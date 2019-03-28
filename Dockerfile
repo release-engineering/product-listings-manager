@@ -11,7 +11,6 @@ RUN yum install -y epel-release \
         git \
         python-gunicorn \
         python-flask \
-        python-flask-xml-rpc \
         python2-flask-restful \
         python2-koji \
         PyGreSQL
