@@ -339,12 +339,25 @@ class Products(object):
         return [row[0] for row in rows]
     get_module_overrides = staticmethod(get_module_overrides)
 
+    @staticmethod
+    def get_product_labels(compose_dbh):
+        dbc = compose_dbh.cursor()
+        qry = 'SELECT DISTINCT label FROM products'
+        Products.execute_query(dbc, qry)
+        rows = dbc.fetchall()
+        return [{'label': row[0]} for row in rows]
+
 
 def getProductInfo(label):
     """
     Get a list of the versions and variants of a product with the given label.
     """
     return Products.get_product_info(Products.compose_get_dbh(), label)
+
+
+def getProductLabels():
+    compose_dbh = Products.compose_get_dbh()
+    return Products.get_product_labels(compose_dbh)
 
 
 def getProductListings(productLabel, buildInfo):

@@ -20,6 +20,7 @@ class TestIndex(object):
             'module_product_listings_url': 'http://localhost/api/v1.0/module-product-listings/:label/:module_build_nvr',
             'product_info_url': 'http://localhost/api/v1.0/product-info/:label',
             'product_listings_url': 'http://localhost/api/v1.0/product-listings/:label/:build_info',
+            'product_labels_url': 'http://localhost/api/v1.0/product-labels',
         }
         assert r.status_code == 200
         assert r.get_json() == expected_json
@@ -95,3 +96,16 @@ class TestModuleProductListings(object):
         r = client.get(path)
         assert r.status_code == 404
         assert error_message in r.get_json().get('message', '')
+
+
+class TestLabels(object):
+    labels = [
+        {'label': 'RHEL-5'},
+        {'label': 'RHEL-6'}
+    ]
+
+    @patch('product_listings_manager.products.getProductLabels', return_value=labels)
+    def test_get_product_info(self, mock_get_product_info, client):
+        r = client.get('/api/v1.0/product-labels')
+        assert r.status_code == 200
+        assert r.get_json() == mock_get_product_info.return_value
