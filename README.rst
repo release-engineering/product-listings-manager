@@ -73,7 +73,7 @@ Installation and setup
 
 5. Create ``config.py`` with the database settings::
 
-   $ cp product_listings_manager/config.py config.py
+   $ echo "SQLALCHEMY_DATABASE_URI = 'postgresql://myusername:mypass@dbhost/dbname'" > config.py
    $ vi config.py
 
 6. Set the ``PLM_CONFIG_FILE`` environment variable to the full filesystem path of
