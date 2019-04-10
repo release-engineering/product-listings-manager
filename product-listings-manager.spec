@@ -7,7 +7,7 @@
 %global modname product_listings_manager
 
 Name: product-listings-manager
-Version: 0.3.3
+Version: 0.4
 Release: 1%{?dist}
 Summary: HTTP interface to composedb
 
@@ -97,6 +97,15 @@ py.test-2.7 -v %{modname}/tests
 %endif
 
 %changelog
+* Tue Apr 09 2019 Haibo Lin <hlin@redhat.com> 0.4-1
+- Don't ignore spec file changes in git (hluk@email.cz)
+- Remove deprecated XML-RPC API (hluk@email.cz)
+- Add REST API endpoint to list product labels (hluk@email.cz)
+- Show image building status in quay.io (hlin@redhat.com)
+- Shorten commit message of tito tag command (hlin@redhat.com)
+- Configure logging for PLM (hlin@redhat.com)
+- Use application factory (hlin@redhat.com)
+
 * Mon Mar 18 2019 Haibo Lin <hlin@redhat.com> 0.3.3-1
 - Use latest module record (hlin@redhat.com)
 - Fix positive overrides ignored issue (hlin@redhat.com)
