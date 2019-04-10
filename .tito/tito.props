@@ -4,6 +4,7 @@ tagger = tito.tagger.VersionTagger
 changelog_do_not_remove_cherrypick = 0
 changelog_format = %s (%ae)
 tag_commit_message_format = Release %(name)s %(version)s
+tag_format = v{version}-{release}
 
 [version_template]
 destination_file = product_listings_manager/__init__.py
