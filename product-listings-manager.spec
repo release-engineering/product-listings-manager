@@ -7,7 +7,7 @@
 %global modname product_listings_manager
 
 Name: product-listings-manager
-Version: 0.4
+Version: 0.5.0
 Release: 1%{?dist}
 Summary: HTTP interface to composedb
 
@@ -97,6 +97,12 @@ py.test-2.7 -v %{modname}/tests
 %endif
 
 %changelog
+* Thu Apr 11 2019 Haibo Lin <hlin@redhat.com> 0.5.0-1
+- Change tito tag format to make it shorter (hlin@redhat.com)
+- Modulize configuration (hlin@redhat.com)
+- Replace raw SQL with SQLAlchemy models (hlin@redhat.com)
+- Define models using SQLAlchemy (hlin@redhat.com)
+
 * Tue Apr 09 2019 Haibo Lin <hlin@redhat.com> 0.4-1
 - Don't ignore spec file changes in git (hluk@email.cz)
 - Remove deprecated XML-RPC API (hluk@email.cz)
