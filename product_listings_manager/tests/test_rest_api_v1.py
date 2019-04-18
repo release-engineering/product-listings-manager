@@ -17,6 +17,7 @@ class TestIndex(object):
         r = client.get('/api/v1.0/')
         expected_json = {
             'about_url': 'http://localhost/api/v1.0/about',
+            'health_url': 'http://localhost/api/v1.0/health',
             'module_product_listings_url': 'http://localhost/api/v1.0/module-product-listings/:label/:module_build_nvr',
             'product_info_url': 'http://localhost/api/v1.0/product-info/:label',
             'product_listings_url': 'http://localhost/api/v1.0/product-listings/:label/:build_info',
