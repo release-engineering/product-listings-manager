@@ -1,6 +1,7 @@
 # koji hub plugin
 
 import copy
+import functools
 import koji
 import logging
 import re
@@ -39,6 +40,12 @@ class ProductListingsNotFoundError(ValueError):
     pass
 
 
+def _cmp(a, b):
+    # Equivalent for cmp() function in python2
+    # https://docs.python.org/3.0/whatsnew/3.0.html#ordering-comparisons
+    return (a > b) - (a < b)
+
+
 class Products(object):
     """
     Class to hold methods related to product information.
@@ -68,16 +75,18 @@ class Products(object):
         x_score = Products.score(x)
         y_score = Products.score(y)
         if x_score == y_score:
-            return cmp(x, y)
+            return _cmp(x, y)
         else:
-            return cmp(x_score, y_score)
+            return _cmp(x_score, y_score)
     my_sort = staticmethod(my_sort)
 
     def get_product_info(label):
         """Get the latest version of product and it's variants."""
         products = models.Products.query.filter_by(label=label).all()
         versions = [x.version for x in products]
-        versions.sort(Products.my_sort)
+        # Use functools.cmp_to_key for python3
+        # https://docs.python.org/3/library/functools.html#functools.cmp_to_key
+        versions.sort(key=functools.cmp_to_key(Products.my_sort))
         versions.reverse()
 
         if not versions:
@@ -135,7 +144,7 @@ class Products(object):
             else:
                 if arch not in trees:
                     trees[arch] = id
-        return trees.values() + compat_trees.values()
+        return list(trees.values()) + list(compat_trees.values())
     precalc_treelist = staticmethod(precalc_treelist)
 
     def dest_get_archs(trees, src_arch, names, cache_entry, version=None, overrides=None):
@@ -341,7 +350,7 @@ def getModuleProductListings(productLabel, moduleNVR):
         overrides = Products.get_module_overrides(
             productLabel, version, module_name, module_stream, variant)
 
-        archs = sorted(set(trees.values() + overrides))
+        archs = sorted(set(list(trees.values()) + overrides))
 
         if archs:
             listings.setdefault(variant, archs)
