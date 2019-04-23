@@ -11,9 +11,11 @@ RUN yum install -y epel-release \
         git \
         python-gunicorn \
         python-flask \
+        python-psycopg2 \
+        python-sqlalchemy \
         python2-flask-restful \
-        python2-koji \
-        PyGreSQL
+        python2-flask-sqlalchemy \
+        python2-koji
 
 WORKDIR /var/www/product-listings-manager
 
