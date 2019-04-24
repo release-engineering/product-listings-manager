@@ -47,7 +47,12 @@ class Health(Resource):
         try:
             db.engine.execute('SELECT 1')
         except SQLAlchemyError as e:
-            return {'ok': False, 'message': str(e)}, 503
+            return {'ok': False, 'message': 'DB Error: {}'.format(e)}, 503
+
+        try:
+            products.get_koji_session().getAPIVersion()
+        except Exception as e:
+            return {'ok': False, 'message': 'Koji Error: {}'.format(e)}, 503
 
         return {'ok': True, 'message': 'It works!'}
 
