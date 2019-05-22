@@ -7,7 +7,7 @@
 %global modname product_listings_manager
 
 Name: product-listings-manager
-Version: 0.5.0
+Version: 1.0.0
 Release: 1%{?dist}
 Summary: HTTP interface to composedb
 
@@ -97,6 +97,13 @@ py.test-2.7 -v %{modname}/tests
 %endif
 
 %changelog
+* Wed May 22 2019 Haibo Lin <hlin@redhat.com> 1.0.0-1
+- Check koji status in health API (hlin@redhat.com)
+- Add missing packages to Dockerfile (hlin@redhat.com)
+- Generate coverage report (hlin@redhat.com)
+- Support python3 (hlin@redhat.com)
+- Add health check API (hlin@redhat.com)
+
 * Thu Apr 11 2019 Haibo Lin <hlin@redhat.com> 0.5.0-1
 - Change tito tag format to make it shorter (hlin@redhat.com)
 - Modulize configuration (hlin@redhat.com)
