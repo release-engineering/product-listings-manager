@@ -9,13 +9,16 @@ RUN yum install -y epel-release \
     && yum -y update \
     && yum -y install \
         git \
-        python-gunicorn \
+        python-pip \
         python-flask \
         python-psycopg2 \
         python-sqlalchemy \
         python2-flask-restful \
         python2-flask-sqlalchemy \
-        python2-koji
+        python2-koji \
+    && pip install \
+        gunicorn \
+        futures
 
 WORKDIR /var/www/product-listings-manager
 
