@@ -177,26 +177,6 @@ class Products(object):
         return ret
     dest_get_archs = staticmethod(dest_get_archs)
 
-    def get_module(name, stream):
-        return models.Modules.query.filter_by(name=name, stream=stream).order_by(
-            models.Modules.version.desc()).first()
-    get_module = staticmethod(get_module)
-
-    def precalc_module_trees(product, version, module_id, variant=None):
-        '''Returns dict {tree_id: arch}.
-
-        Looks in the compose db for a list of trees (one per arch) that are the most
-        recent for the particular product specified.'''
-
-        query = models.Trees.query.join(models.Trees.products).join(models.Trees.modules).filter(
-            models.Products.label == product, models.Products.version == version).filter(
-            models.Modules.id == module_id)
-        if variant:
-            query = query.filter(models.Products.variant == variant)
-
-        return {t.id: t.arch for t in reversed(query.all())}
-    precalc_module_trees = staticmethod(precalc_module_trees)
-
     def get_module_overrides(product, version, module_name, module_stream, variant=None):
         '''Returns the list of module overrides for the particular product specified.'''
 
@@ -335,22 +315,21 @@ def getModuleProductListings(productLabel, moduleNVR):
     prodinfo = Products.get_product_info(productLabel)
     version, variants = prodinfo
 
-    module = Products.get_module(module_name, module_stream)
-    if not module:
-        raise ProductListingsNotFoundError("Could not find a module build with NVR: %s" % moduleNVR)
-    module_id = module.id
-
     listings = {}
     for variant in variants:
         if variant is None:
             # dict keys must be a string
             variant = ''
-        trees = Products.precalc_module_trees(productLabel, version, module_id, variant)
+        trees = Products.precalc_treelist(productLabel, version, variant)
+
+        module_trees = models.Trees.query.with_entities(models.Trees.arch).join(models.Trees.modules).filter(
+            models.Modules.name == module_name,
+            models.Modules.stream == module_stream).filter(models.Trees.id.in_(trees))
 
         overrides = Products.get_module_overrides(
             productLabel, version, module_name, module_stream, variant)
 
-        archs = sorted(set(list(trees.values()) + overrides))
+        archs = sorted(set([arch for arch, in module_trees] + overrides))
 
         if archs:
             listings.setdefault(variant, archs)
