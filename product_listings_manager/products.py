@@ -181,8 +181,8 @@ class Products(object):
         '''Returns the list of module overrides for the particular product specified.'''
 
         query = models.ModuleOverrides.query.join(models.ModuleOverrides.productref).filter(
-            models.Products.label == product, models.Products.version == version).filter(
-            models.Modules.name == module_name, models.Modules.stream == module_stream)
+            models.Products.label == product, models.Products.version == version,
+            models.ModuleOverrides.name == module_name, models.ModuleOverrides.stream == module_stream)
         if variant:
             query = query.filter(models.Products.variant == variant)
 
