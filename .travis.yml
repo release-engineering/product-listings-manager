@@ -5,7 +5,7 @@ services: docker
 matrix:
   include:
     # https://hub.docker.com/_/fedora/
-    - env: CONTAINER_IMAGE=fedora:rawhide TOXENV=py37
+    - env: CONTAINER_IMAGE=fedora:29 TOXENV=py37
     - env: CONTAINER_IMAGE=fedora:28 TOXENV=py36
     # https://hub.docker.com/_/centos/
     - env: CONTAINER_IMAGE=centos:7 TOXENV=py27
