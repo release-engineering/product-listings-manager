@@ -7,7 +7,7 @@
 %global modname product_listings_manager
 
 Name: product-listings-manager
-Version: 1.0.0
+Version: 1.1.0
 Release: 1%{?dist}
 Summary: HTTP interface to composedb
 
@@ -97,6 +97,12 @@ py.test-2.7 -v %{modname}/tests
 %endif
 
 %changelog
+* Mon Jul 01 2019 Haibo Lin <hlin@redhat.com> 1.1.0-1
+- Query module overrides directly (hlin@redhat.com)
+- Use fedora 29 instead of rawhide for py37 tests (hlin@redhat.com)
+- Refactor get module product listings (hlin@redhat.com)
+- Install new version of gunicorn in Docker container (hlin@redhat.com)
+
 * Wed May 22 2019 Haibo Lin <hlin@redhat.com> 1.0.0-1
 - Check koji status in health API (hlin@redhat.com)
 - Add missing packages to Dockerfile (hlin@redhat.com)
