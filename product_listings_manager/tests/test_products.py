@@ -7,12 +7,6 @@ from product_listings_manager.products import getProductLabels
 import pytest
 
 
-pytestmark = pytest.mark.skipif(
-    not pytest.config.getoption('--live', default=False),
-    reason='use --live argument to query production servers'
-)
-
-
 @pytest.fixture(scope='module')
 def app():
     app = create_app()
@@ -20,6 +14,7 @@ def app():
         yield app
 
 
+@pytest.mark.live
 class TestProductLive(object):
 
     def test_score(self):
@@ -62,6 +57,7 @@ class TestProductLive(object):
         pass
 
 
+@pytest.mark.live
 class TestGetProductInfo(object):
 
     def test_simple(self, app):
@@ -70,6 +66,7 @@ class TestGetProductInfo(object):
         assert result == ('6.9', ['EXTRAS-6'])
 
 
+@pytest.mark.live
 class TestGetProductListings(object):
 
     def test_simple(self, app):
@@ -87,6 +84,7 @@ class TestGetProductListings(object):
         assert result == expected
 
 
+@pytest.mark.live
 class TestGetModuleProductListings(object):
 
     def test_getModuleProductListings(self, app):
@@ -99,6 +97,7 @@ class TestGetModuleProductListings(object):
         assert result == expected
 
 
+@pytest.mark.live
 class TestProductLabels(object):
 
     def test_getProductLabels(self, app):
