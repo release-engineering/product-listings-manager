@@ -23,9 +23,8 @@ BuildRequires: python3-flask-sqlalchemy
 BuildRequires: python3-flask-restful
 BuildRequires: python3-koji
 BuildRequires: python3-psycopg2
-BuildRequires: python3-pytest
+BuildRequires: python3-setuptools
 BuildRequires: python3-sqlalchemy
-BuildRequires: python3-mock
 Requires: python3-flask
 Requires: python3-flask-sqlalchemy
 Requires: python3-flask-restful
@@ -40,8 +39,7 @@ BuildRequires: python-psycopg2
 BuildRequires: python-sqlalchemy
 BuildRequires: python2-flask-restful
 BuildRequires: python2-koji
-BuildRequires: pytest
-BuildRequires: python-mock
+BuildRequires: python2-setuptools
 Requires: python-flask
 Requires: python-flask-sqlalchemy
 Requires: python-sqlalchemy
@@ -74,13 +72,6 @@ composedb.
 %endif
 mkdir -p %{buildroot}%{_sysconfdir}/%{name}
 cp -p %{modname}/config.py %{buildroot}%{_sysconfdir}/%{name}
-
-%check
-%if %{with python3}
-py.test-3 -v %{modname}/tests
-%else
-py.test-2.7 -v %{modname}/tests
-%endif
 
 %files
 %license LICENSE
