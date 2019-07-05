@@ -1,15 +1,6 @@
-import pytest
-
 from mock import patch
 
-from product_listings_manager.app import create_app
 from product_listings_manager import products
-
-
-@pytest.yield_fixture
-def client():
-    client = create_app().test_client()
-    yield client
 
 
 class TestIndex(object):
@@ -35,16 +26,61 @@ class TestAbout(object):
         assert r.get_json() == {'version': __version__}
 
 
+class TestHealth(object):
+    def test_health_db_fail(self, client):
+        r = client.get('/api/v1.0/health')
+        assert r.status_code == 503
+        data = r.get_json()
+        assert data['ok'] is False
+        assert 'DB Error:' in data['message']
+
+    @patch('product_listings_manager.rest_api_v1.db')
+    @patch('product_listings_manager.rest_api_v1.products.get_koji_session')
+    def test_health_koji_fail(self, mock_koji, mock_db, client):
+        mock_db.return_value.engine.return_value.execute.return_value = 1
+        mock_koji.side_effect = Exception('koji connect error')
+        r = client.get('/api/v1.0/health')
+        assert r.status_code == 503
+        data = r.get_json()
+        assert data['ok'] is False
+        assert 'Koji Error: koji connect error' in data['message']
+
+    @patch('product_listings_manager.rest_api_v1.db')
+    @patch('product_listings_manager.rest_api_v1.products.get_koji_session')
+    def test_health_ok(self, mock_koji, mock_db, client):
+        mock_db.return_value.engine.return_value.execute.return_value = 1
+        mock_koji.return_value.getAPIVersion.return_value = 1
+        r = client.get('/api/v1.0/health')
+        assert r.status_code == 200
+        assert r.get_json() == {'ok': True, 'message': 'It works!'}
+
+
 class TestProductInfo(object):
     product_label = 'RHEL-6-Server-EXTRAS-6'
     product_info_data = ['6.9', ['EXTRAS-6']]
+    path = '/api/v1.0/product-info/{0}'.format(product_label)
 
     @patch('product_listings_manager.products.getProductInfo', return_value=product_info_data)
     def test_get_product_info(self, mock_get_product_info, client):
-        path = '/api/v1.0/product-info/{0}'.format(self.product_label)
-        r = client.get(path)
+        r = client.get(self.path)
         assert r.status_code == 200
         assert r.get_json() == mock_get_product_info.return_value
+
+    @patch('product_listings_manager.products.getProductInfo')
+    def test_label_not_found(self, mock_getinfo, client):
+        msg = 'Could not find a product with label: %s' % self.product_label
+        mock_getinfo.side_effect = products.ProductListingsNotFoundError(msg)
+        r = client.get(self.path)
+        assert r.status_code == 404
+        assert msg in r.get_json()['message']
+
+    @patch('product_listings_manager.products.getProductInfo')
+    @patch('product_listings_manager.utils.log_remote_call_error')
+    def test_unknown_error(self, mock_log, mock_getinfo, client):
+        mock_getinfo.side_effect = Exception('Unexpected error')
+        r = client.get(self.path)
+        assert r.status_code == 500
+        mock_log.assert_called_once_with('API call getProductInfo() failed', self.product_label)
 
 
 class TestProductListings(object):
@@ -57,11 +93,11 @@ class TestProductListings(object):
             }
         }
     }
+    path = '/api/v1.0/product-listings/{0}/{1}'.format(product_label, nvr)
 
     @patch('product_listings_manager.products.getProductListings', return_value=product_listings_data)
     def test_get_product_listings(self, mock_get_product_listings, client):
-        path = '/api/v1.0/product-listings/{0}/{1}'.format(self.product_label, self.nvr)
-        r = client.get(path)
+        r = client.get(self.path)
         assert r.status_code == 200
         assert r.get_json() == mock_get_product_listings.return_value
 
@@ -69,10 +105,17 @@ class TestProductListings(object):
     def test_product_listings_not_found(self, mock_get_product_listings, client):
         error_message = 'NOT FOUND'
         mock_get_product_listings.side_effect = products.ProductListingsNotFoundError(error_message)
-        path = '/api/v1.0/product-listings/{0}/{1}'.format(self.product_label, self.nvr)
-        r = client.get(path)
+        r = client.get(self.path)
         assert r.status_code == 404
         assert r.get_json() == {'message': error_message}
+
+    @patch('product_listings_manager.products.getProductListings')
+    @patch('product_listings_manager.utils.log_remote_call_error')
+    def test_unknown_error(self, mock_log, mock_getlistings, client):
+        mock_getlistings.side_effect = Exception('Unexpected error')
+        r = client.get(self.path)
+        assert r.status_code == 500
+        mock_log.assert_called_once_with('API call getProductListings() failed', self.product_label, self.nvr)
 
 
 class TestModuleProductListings(object):
@@ -81,11 +124,11 @@ class TestModuleProductListings(object):
     product_listings_data = {
         'AppStream-8.0.0': ['x86_64']
     }
+    path = '/api/v1.0/module-product-listings/{0}/{1}'.format(product_label, nvr)
 
     @patch('product_listings_manager.products.getModuleProductListings', return_value=product_listings_data)
     def test_get_module_product_listings(self, mock_get_module_product_listings, client):
-        path = '/api/v1.0/module-product-listings/{0}/{1}'.format(self.product_label, self.nvr)
-        r = client.get(path)
+        r = client.get(self.path)
         assert r.status_code == 200
         assert r.get_json() == mock_get_module_product_listings.return_value
 
@@ -93,10 +136,17 @@ class TestModuleProductListings(object):
     def test_product_listings_not_found(self, mock_get_module_product_listings, client):
         error_message = 'NOT FOUND'
         mock_get_module_product_listings.side_effect = products.ProductListingsNotFoundError(error_message)
-        path = '/api/v1.0/module-product-listings/{0}/{1}'.format(self.product_label, self.nvr)
-        r = client.get(path)
+        r = client.get(self.path)
         assert r.status_code == 404
         assert error_message in r.get_json().get('message', '')
+
+    @patch('product_listings_manager.products.getModuleProductListings')
+    @patch('product_listings_manager.utils.log_remote_call_error')
+    def test_unknown_error(self, mock_log, mock_getlistings, client):
+        mock_getlistings.side_effect = Exception('Unexpected error')
+        r = client.get(self.path)
+        assert r.status_code == 500
+        mock_log.assert_called_once_with('API call getModuleProductListings() failed', self.product_label, self.nvr)
 
 
 class TestLabels(object):
@@ -110,3 +160,11 @@ class TestLabels(object):
         r = client.get('/api/v1.0/product-labels')
         assert r.status_code == 200
         assert r.get_json() == mock_get_product_info.return_value
+
+    @patch('product_listings_manager.products.getProductLabels')
+    @patch('product_listings_manager.utils.log_remote_call_error')
+    def test_unknown_error(self, mock_log, mock_getlabels, client):
+        mock_getlabels.side_effect = Exception('Unexpected error')
+        r = client.get('/api/v1.0/product-labels')
+        assert r.status_code == 500
+        mock_log.assert_called_once_with('API call getProductLabels() failed')
