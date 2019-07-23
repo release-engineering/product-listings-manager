@@ -1,14 +1,3 @@
-import pytest
-
-from product_listings_manager.app import create_app
-
-
-@pytest.yield_fixture
-def client():
-    client = create_app().test_client()
-    yield client
-
-
 class TestRoot(object):
     def test_get_version(self, client):
         r = client.get('/')

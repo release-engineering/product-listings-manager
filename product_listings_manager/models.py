@@ -128,4 +128,4 @@ class ModuleOverrides(db.Model):
     product_arch = db.Column(db.String(32), primary_key=True)
 
     def __repr__(self):
-        return '<ModuleOverrides %s %s>' % (self.name, self.stream, self.product, self.product_arch)
+        return '<ModuleOverrides %s %s %d %s>' % (self.name, self.stream, self.product, self.product_arch)

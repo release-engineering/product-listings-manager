@@ -34,7 +34,7 @@ setup(
     url='https://github.com/release-engineering/product-listings-manager',
     license='MIT',
     long_description=LONG_DESCRIPTION,
-    packages=find_packages(),
+    packages=find_packages(exclude=['tests']),
     install_requires=[
         'Flask',
         'Flask-Restful',

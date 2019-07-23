@@ -46,7 +46,7 @@ Goals with this project
 Architecture diagram
 --------------------
 
-.. image:: prod-listings-manager.png
+.. image:: misc/prod-listings-manager.png
     :width: 958px
     :align: center
     :height: 364px

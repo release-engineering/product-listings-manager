@@ -3,6 +3,8 @@ from flask import Response
 import json
 import pytest
 
+from product_listings_manager.app import create_app
+
 
 if not hasattr(Response, 'get_json'):
     def get_json(self, force=False, silent=False, cache=True):
@@ -27,3 +29,9 @@ def pytest_collection_modifyitems(config, items):
     for item in items:
         if "live" in item.keywords:
             item.add_marker(skip_live)
+
+
+@pytest.fixture
+def client():
+    client = create_app().test_client()
+    yield client
