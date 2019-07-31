@@ -1,9 +1,3 @@
-%if 0%{?rhel} && 0%{?rhel} <= 7
-%bcond_with python3
-%else
-%bcond_without python3
-%endif
-
 %global modname product_listings_manager
 
 Name: product-listings-manager
@@ -16,7 +10,6 @@ URL: https://github.com/release-engineering/product-listings-manager
 Source0: %{name}-%{version}.tar.gz
 BuildArch: noarch
 
-%if %{with python3}
 BuildRequires: python3-devel
 BuildRequires: python3-flask
 BuildRequires: python3-flask-sqlalchemy
@@ -25,28 +18,13 @@ BuildRequires: python3-koji
 BuildRequires: python3-psycopg2
 BuildRequires: python3-setuptools
 BuildRequires: python3-sqlalchemy
+Requires: koji
 Requires: python3-flask
 Requires: python3-flask-sqlalchemy
 Requires: python3-flask-restful
 Requires: python3-koji
 Requires: python3-psycopg2
 Requires: python3-sqlalchemy
-%else
-BuildRequires: python2-devel
-BuildRequires: python-flask
-BuildRequires: python-flask-sqlalchemy
-BuildRequires: python-psycopg2
-BuildRequires: python-sqlalchemy
-BuildRequires: python2-flask-restful
-BuildRequires: python2-koji
-BuildRequires: python2-setuptools
-Requires: python-flask
-Requires: python-flask-sqlalchemy
-Requires: python-sqlalchemy
-Requires: python2-flask-restful
-Requires: python2-koji
-Requires: python-psycopg2
-%endif
 
 %description
 HTTP interface for finding product listings and interacting with data in
@@ -55,21 +33,11 @@ composedb.
 %prep
 %autosetup
 
-
 %build
-%if %{with python3}
 %py3_build
-%else
-%py2_build
-%endif
-
 
 %install
-%if %{with python3}
 %py3_install
-%else
-%py2_install
-%endif
 mkdir -p %{buildroot}%{_sysconfdir}/%{name}
 cp -p %{modname}/config.py %{buildroot}%{_sysconfdir}/%{name}
 
@@ -79,13 +47,8 @@ cp -p %{modname}/config.py %{buildroot}%{_sysconfdir}/%{name}
 %config(noreplace) %{_sysconfdir}/%{name}/config.py
 %exclude %{_sysconfdir}/%{name}/config.pyc
 %exclude %{_sysconfdir}/%{name}/config.pyo
-%if %{with python3}
 %{python3_sitelib}/%{modname}/
 %{python3_sitelib}/%{modname}-*.egg-info/
-%else
-%{python2_sitelib}/%{modname}/
-%{python2_sitelib}/%{modname}-*.egg-info/
-%endif
 
 %changelog
 * Mon Jul 01 2019 Haibo Lin <hlin@redhat.com> 1.1.0-1
