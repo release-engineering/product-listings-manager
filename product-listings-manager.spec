@@ -1,7 +1,7 @@
 %global modname product_listings_manager
 
 Name: product-listings-manager
-Version: 1.1.0
+Version: 1.1.1
 Release: 1%{?dist}
 Summary: HTTP interface to composedb
 
@@ -51,6 +51,14 @@ cp -p %{modname}/config.py %{buildroot}%{_sysconfdir}/%{name}
 %{python3_sitelib}/%{modname}-*.egg-info/
 
 %changelog
+* Fri Aug 02 2019 Haibo Lin <hlin@redhat.com> 1.1.1-1
+- Fix syntax issue for python3 (hlin@redhat.com)
+- Test with python3.6 only (hlin@redhat.com)
+- Drop python2 rpm build (hlin@redhat.com)
+- Add more tests (hlin@redhat.com)
+- Relocate tests dir (hlin@redhat.com)
+- Move images to misc dir (hlin@redhat.com)
+
 * Mon Jul 01 2019 Haibo Lin <hlin@redhat.com> 1.1.0-1
 - Query module overrides directly (hlin@redhat.com)
 - Use fedora 29 instead of rawhide for py37 tests (hlin@redhat.com)
