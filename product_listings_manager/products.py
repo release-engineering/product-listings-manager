@@ -288,11 +288,11 @@ def getProductListings(productLabel, buildInfo):
                 listings.setdefault(variant, {}).setdefault(rpm['nvr'], {}).setdefault(rpm['arch'], []).append(dest_arch)
 
         for variant in listings.keys():
-            nvrs = listings[variant].keys()
+            nvrs = list(listings[variant].keys())
             # BREW-260: Read allow_src_only flag for the product/version
             allow_src_only = Products.get_srconly_flag(productLabel, version)
             if len(nvrs) == 1:
-                maps = listings[variant][nvrs[0]].keys()
+                maps = list(listings[variant][nvrs[0]].keys())
                 # BREW-260: check for allow_src_only flag added
                 if len(maps) == 1 and maps[0] == 'src' and not allow_src_only:
                     del listings[variant]
