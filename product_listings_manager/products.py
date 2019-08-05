@@ -287,7 +287,7 @@ def getProductListings(productLabel, buildInfo):
             for dest_arch in dest_archs:
                 listings.setdefault(variant, {}).setdefault(rpm['nvr'], {}).setdefault(rpm['arch'], []).append(dest_arch)
 
-        for variant in listings.keys():
+        for variant in list(listings.keys()):
             nvrs = list(listings[variant].keys())
             # BREW-260: Read allow_src_only flag for the product/version
             allow_src_only = Products.get_srconly_flag(productLabel, version)
