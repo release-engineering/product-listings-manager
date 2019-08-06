@@ -1,7 +1,7 @@
 %global modname product_listings_manager
 
 Name: product-listings-manager
-Version: 1.1.1
+Version: 1.1.2
 Release: 1%{?dist}
 Summary: HTTP interface to composedb
 
@@ -51,6 +51,10 @@ cp -p %{modname}/config.py %{buildroot}%{_sysconfdir}/%{name}
 %{python3_sitelib}/%{modname}-*.egg-info/
 
 %changelog
+* Mon Aug 05 2019 Haibo Lin <hlin@redhat.com> 1.1.2-1
+- Fix 'dictionary changed size during iteration' issue (hlin@redhat.com)
+- Update classifiers in setup.py (hlin@redhat.com)
+
 * Fri Aug 02 2019 Haibo Lin <hlin@redhat.com> 1.1.1-1
 - Fix syntax issue for python3 (hlin@redhat.com)
 - Test with python3.6 only (hlin@redhat.com)
