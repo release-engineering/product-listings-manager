@@ -49,5 +49,6 @@ setup(
         'pytest',
         'pytest-cov',
         'mock',
+        'factory-boy'
     ],
 )
