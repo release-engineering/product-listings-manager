@@ -1,9 +1,11 @@
 # Flask < 1.0 does not have get_json.
-from flask import Response
+import os
 import json
 import pytest
+from flask import Response
 
 from product_listings_manager.app import create_app
+from product_listings_manager.models import db
 
 
 if not hasattr(Response, 'get_json'):
@@ -32,6 +34,15 @@ def pytest_collection_modifyitems(config, items):
 
 
 @pytest.fixture
-def client():
-    client = create_app().test_client()
+def app():
+    os.environ['SQLALCHEMY_DATABASE_URI'] = 'sqlite://'
+    app = create_app()
+    with app.app_context():
+        db.create_all()
+        yield app
+
+
+@pytest.fixture
+def client(app):
+    client = app.test_client()
     yield client
