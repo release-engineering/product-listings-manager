@@ -10,6 +10,10 @@ product-listings-manager
 .. image:: https://quay.io/repository/redhat/product-listings-manager/status
           :target: https://quay.io/repository/redhat/product-listings-manager
 
+.. image:: https://coveralls.io/repos/github/release-engineering/product-listings-manager/badge.svg?branch=master
+          :target: https://coveralls.io/github/release-engineering/product-listings-manager?branch=master
+
+
 HTTP interface for finding product listings and interacting with data in
 composedb.
 

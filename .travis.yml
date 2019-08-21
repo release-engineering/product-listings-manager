@@ -1,4 +1,4 @@
-language: generic
+language: python
 sudo: required
 services: docker
 
@@ -9,7 +9,12 @@ matrix:
     - env: CONTAINER_IMAGE=fedora:28 TOXENV=py36
 
 install:
+  - pip install coveralls
   - ./.travis/install.sh
 
 script:
   - ./.travis/run.sh
+
+after_success:
+  - sed -i -e s@/build@"$(pwd)"@g .coverage
+  - coveralls

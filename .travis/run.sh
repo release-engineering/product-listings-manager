@@ -6,4 +6,5 @@ docker run \
     --rm \
     -e TOXENV="${TOXENV}" \
     -t \
+    -v $(pwd):/build \
     product-listings-manager \
