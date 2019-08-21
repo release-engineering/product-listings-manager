@@ -17,44 +17,10 @@ def app():
 @pytest.mark.live
 class TestProductLive(object):
 
-    def test_score(self):
-        # release = ???
-        # assert Products.score(release) = ???
-        pass
-
-    def test_my_sort(self):
-        # x, y = (???, ???)
-        # assert Products.my_sort(x, y) == ???
-        pass
-
     def test_get_product_info(self, app):
         product = 'RHEL-6-Server-EXTRAS-6'
         result = Products.get_product_info(product)
         assert result == ('6.9', ['EXTRAS-6'])
-
-    def test_get_overrides(self):
-        pass
-
-    def test_get_match_versions(self):
-        pass
-
-    def test_get_srconly_flag(self):
-        pass
-
-    def test_precalc_treelist(self):
-        pass
-
-    def test_dest_get_archs(self):
-        pass
-
-    def test_get_module(self):
-        pass
-
-    def test_get_module_overrides(self):
-        pass
-
-    def test_precalc_module_trees(self):
-        pass
 
 
 @pytest.mark.live
