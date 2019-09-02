@@ -61,36 +61,35 @@ Installation and setup
 
 1. Install the prerequisite system packages::
 
-   $ sudo yum -y install postgresql-devel krb5-devel rpm-devel gcc python-devel
+   $ sudo dnf -y install postgresql-devel krb5-devel rpm-devel gcc python-devel python3-virtualenvwrapper
 
 2. Set up a virtualenv::
 
-   $ virtualenv venv
+   $ mkvirtualenv -p python3 plm
 
-3. Activate the virtualenv::
+  ... Run ``source /usr/bin/virtualenvwrapper.sh`` if ``mkvirtualenv`` command not available
 
-   $ . venv/bin/activate
+3. Install the prerequisite packages::
 
-4. Install the prerequisite packages::
+   $ workon plm
+   $ pip install -r requirements.txt
 
-   $ python setup.py install
-
-5. Create ``config.py`` with the database settings::
+4. Create ``config.py`` with the database settings::
 
    $ echo "SQLALCHEMY_DATABASE_URI = 'postgresql://myusername:mypass@dbhost/dbname'" > config.py
    $ vi config.py
 
-6. Set the ``PLM_CONFIG_FILE`` environment variable to the full filesystem path of
+5. Set the ``PLM_CONFIG_FILE`` environment variable to the full filesystem path of
    this new file::
 
    $ export PLM_CONFIG_FILE=$(pwd)/config.py
 
-7. Install brewkoji package. This creates ``/etc/koji.conf.d/brewkoji.conf``,
+6. Install brewkoji package. This creates ``/etc/koji.conf.d/brewkoji.conf``,
    so ``products.py`` can contact the Brew hub::
 
-   $ sudo yum -y install brewkoji
+   $ sudo dnf -y install brewkoji
 
-8. Trust Brew's SSL certificate::
+7. Trust Brew's SSL certificate::
 
    $ export REQUESTS_CA_BUNDLE=/etc/pki/ca-trust/source/anchors/RH-IT-Root-CA.crt
 
@@ -99,7 +98,7 @@ Installation and setup
 
    $ export REQUESTS_CA_BUNDLE=/etc/pki/tls/certs/ca-bundle.crt
 
-9. Run the server::
+8. Run the server::
 
    $ FLASK_APP=product_listings_manager.app flask run
 
@@ -110,16 +109,22 @@ You can access the http://localhost:5000/ at that point.
 Running the tests
 -----------------
 
+Install required packages for test::
+
+   $ pip install -r test-requirements.txt
+
 You can invoke the tests with ``tox``::
 
-   $ pip install tox
    $ tox
 
-Alternatively, you can run pytest directly. In this example I add the
-``--live`` argument to run against the live composedb instance::
+Alternatively, you can run pytest directly::
 
-   $ pip install pytest
-   $ python -m pytest --live product_listings_manager/tests/
+   $ pytest --cov=product_listings_manager tests
+
+Using the ``--live`` argument if you want to run against the live composedb instance::
+
+   $ pytest --cov=product_listings_manager --live tests
+
 
 Configuring a local database
 ----------------------------

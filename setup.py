@@ -1,5 +1,5 @@
-import re
 import os
+import re
 from setuptools import setup, find_packages
 
 
@@ -11,6 +11,24 @@ def read_module_contents():
     with open('product_listings_manager/__init__.py') as init:
         return init.read()
 
+
+def read_requirements(filename):
+    specifiers = []
+    dep_links = []
+    with open(filename, 'r') as f:
+        for line in f:
+            if line.startswith('-r') or line.strip() == '':
+                continue
+            if line.startswith('git+'):
+                dep_links.append(line.strip())
+            else:
+                specifiers.append(line.strip())
+    return specifiers, dep_links
+
+
+setup_py_path = os.path.dirname(os.path.realpath(__file__))
+install_requires, _ = read_requirements(os.path.join(setup_py_path, 'requirements.txt'))
+tests_requires, _ = read_requirements(os.path.join(setup_py_path, 'test-requirements.txt'))
 
 module_file = read_module_contents()
 metadata = dict(re.findall(r"__([a-z]+)__\s*=\s*'([^']+)'", module_file))
@@ -37,18 +55,6 @@ setup(
     license='MIT',
     long_description=LONG_DESCRIPTION,
     packages=find_packages(exclude=['tests']),
-    install_requires=[
-        'Flask',
-        'Flask-Restful',
-        'Flask-SQLAlchemy',
-        'SQLAlchemy',
-        'koji',
-        'psycopg2-binary',
-    ],
-    tests_require=[
-        'pytest',
-        'pytest-cov',
-        'mock',
-        'factory-boy'
-    ],
+    install_requires=install_requires,
+    tests_require=tests_requires
 )
