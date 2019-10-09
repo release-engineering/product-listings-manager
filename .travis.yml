@@ -4,9 +4,7 @@ services: docker
 
 matrix:
   include:
-    # https://hub.docker.com/_/fedora/
-    # will use centos:8 after it released
-    - env: CONTAINER_IMAGE=fedora:28 TOXENV=py36
+    - env: CONTAINER_IMAGE=py36 TOXENV=py36
 
 install:
   - pip install coveralls

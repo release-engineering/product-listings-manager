@@ -1,24 +1,23 @@
-FROM centos:7
+FROM centos:8
 LABEL \
     name="product-listings-manager" \
     vendor="product-listings-manager developers" \
     license="MIT" \
     build-date=""
 
-RUN yum install -y epel-release \
-    && yum -y update \
+RUN yum -y update \
     && yum -y install \
+        gcc \
         git \
-        python-pip \
-        python-flask \
-        python-psycopg2 \
-        python-sqlalchemy \
-        python2-flask-restful \
-        python2-flask-sqlalchemy \
-        python2-koji \
-    && pip install \
-        gunicorn \
-        futures
+        krb5-devel \
+        postgresql-devel \
+        python36 \
+        python36-devel \
+        redhat-rpm-config \
+        rpm-devel \
+    && yum -y clean all \
+    && rm -rf /var/cache/dnf \
+    && rm -rf /tmp/*
 
 WORKDIR /var/www/product-listings-manager
 
@@ -27,11 +26,10 @@ COPY .git .git
 RUN git reset --hard HEAD \
     && git checkout HEAD
 
-# Clean up.
-RUN yum -y remove git \
-    && yum -y clean all \
-    && rm -rf /var/cache/yum \
-    && rm -rf /tmp/*
+RUN pip3 install --no-cache-dir \
+        -r requirements.txt \
+        gunicorn \
+        futures
 
 ARG cacert_url
 RUN if [ -n "$cacert_url" ]; then \
