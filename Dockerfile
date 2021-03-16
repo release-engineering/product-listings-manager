@@ -31,6 +31,15 @@ COPY .git .git
 RUN git reset --hard HEAD \
     && git checkout HEAD
 
+# Install the required python packages
+RUN pip3 install -r requirements.txt
+
+# Clean up.
+RUN yum -y remove git \
+    && yum -y clean all \
+    && rm -rf /var/cache/yum \
+    && rm -rf /tmp/*
+
 ARG cacert_url
 RUN if [ -n "$cacert_url" ]; then \
         cd /etc/pki/ca-trust/source/anchors \
