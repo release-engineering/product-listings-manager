@@ -125,7 +125,7 @@ class MatchVersions(db.Model):
     product = db.Column(db.String(100), primary_key=True)
 
     def __repr__(self):
-        return "<MatchVersion %s %s>" % (self.id, self.name, self.product)
+        return "<MatchVersion %s %s %s>" % (self.id, self.name, self.product)
 
 
 class Modules(db.Model):
