@@ -16,8 +16,8 @@ RUN yum install -y epel-release \
         python3-gunicorn \
         python3-koji \
         python3-pip \
-        python3-sqlalchemy \
-        python3-psycopg2
+        python3-psycopg2 \
+        python3-sqlalchemy
 
 RUN pip3 install \
         flask-restful==0.3.8
