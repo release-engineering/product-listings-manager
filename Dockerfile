@@ -17,9 +17,7 @@ RUN yum install -y epel-release \
         python3-koji \
         python3-pip \
         python3-sqlalchemy \
-    && yum -y clean all \
-    && rm -rf /var/cache/yum \
-    && rm -rf /tmp/*
+        python3-psycopg2
 
 RUN pip3 install \
         flask-restful==0.3.8
@@ -31,11 +29,8 @@ COPY .git .git
 RUN git reset --hard HEAD \
     && git checkout HEAD
 
-# Install the required python packages
-RUN pip3 install -r requirements.txt
-
 # Clean up.
-RUN yum -y remove git \
+RUN yum -y remove git-core \
     && yum -y clean all \
     && rm -rf /var/cache/yum \
     && rm -rf /tmp/*
