@@ -16,10 +16,8 @@ RUN yum install -y epel-release \
         python3-gunicorn \
         python3-koji \
         python3-pip \
-        python3-sqlalchemy \
-    && yum -y clean all \
-    && rm -rf /var/cache/yum \
-    && rm -rf /tmp/*
+        python3-psycopg2 \
+        python3-sqlalchemy
 
 RUN pip3 install \
         flask-restful==0.3.8
@@ -30,6 +28,12 @@ WORKDIR /var/www/product-listings-manager
 COPY .git .git
 RUN git reset --hard HEAD \
     && git checkout HEAD
+
+# Clean up.
+RUN yum -y remove git-core \
+    && yum -y clean all \
+    && rm -rf /var/cache/yum \
+    && rm -rf /tmp/*
 
 ARG cacert_url
 RUN if [ -n "$cacert_url" ]; then \
