@@ -1,9 +1,6 @@
 product-listings-manager
 ========================
 
-.. image:: https://travis-ci.org/release-engineering/product-listings-manager.svg?branch=master
-          :target: https://travis-ci.org/release-engineering/product-listings-manager
-
 .. image:: https://copr.fedorainfracloud.org/coprs/ktdreyer/product-listings-manager/package/product-listings-manager/status_image/last_build.png
           :target: https://copr.fedorainfracloud.org/coprs/ktdreyer/product-listings-manager/package/product-listings-manager/
 
