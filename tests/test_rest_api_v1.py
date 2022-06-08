@@ -31,7 +31,10 @@ class TestAbout(object):
 
         r = client.get("/api/v1.0/about")
         assert r.status_code == 200
-        assert r.get_json() == {"version": __version__}
+        assert r.get_json() == {
+            "source": "https://github.com/release-engineering/product-listings-manager",
+            "version": __version__,
+        }
 
 
 class TestHealth(object):
