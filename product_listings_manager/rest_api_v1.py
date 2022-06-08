@@ -12,7 +12,7 @@ blueprint = Blueprint("api_v1", __name__)
 
 class Index(Resource):
     def get(self):
-        """ Link to the the v1 API endpoints. """
+        """Link to the the v1 API endpoints."""
         return {
             "about_url": url_for(".about", _external=True),
             "health_url": url_for(".health", _external=True),
