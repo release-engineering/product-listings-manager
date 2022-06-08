@@ -9,7 +9,7 @@ DOCUMENTATION_URL = "https://github.com/release-engineering/product-listings-man
 
 class Index(Resource):
     def get(self):
-        """ Link to the documentation and top-level API endpoints. """
+        """Link to the documentation and top-level API endpoints."""
         return {
             "documentation_url": DOCUMENTATION_URL,
             "api_v1_url": url_for("api_v1.index", _external=True),
