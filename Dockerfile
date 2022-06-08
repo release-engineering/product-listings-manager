@@ -5,7 +5,10 @@ LABEL \
     license="MIT" \
     build-date=""
 
-RUN yum install -y epel-release \
+# https://www.centos.org/centos-linux-eol/
+RUN sed -i -e "s|mirrorlist=|#mirrorlist=|g" /etc/yum.repos.d/CentOS-* \
+    && sed -i -e "s|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g" /etc/yum.repos.d/CentOS-* \
+    && yum install -y epel-release \
     && yum -y install \
         --setopt=install_weak_deps=false \
         --setopt=tsflags=nodocs \
