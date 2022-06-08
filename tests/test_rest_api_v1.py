@@ -239,8 +239,8 @@ class TestModuleProductListings(object):
     @patch("product_listings_manager.products.getModuleProductListings")
     def test_product_listings_not_found(self, mock_get_module_product_listings, client):
         error_message = "NOT FOUND"
-        mock_get_module_product_listings.side_effect = products.ProductListingsNotFoundError(
-            error_message
+        mock_get_module_product_listings.side_effect = (
+            products.ProductListingsNotFoundError(error_message)
         )
         r = client.get(self.path)
         assert r.status_code == 404
