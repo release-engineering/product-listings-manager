@@ -30,7 +30,9 @@ jobs:
           pip install tox
 
       - name: Test with tox
-        run: tox -e py
+        run: |
+          PY=py$(echo ${{ matrix.python-version }} | tr -d ".")
+          tox -e ${PY}
 
       - name: Run coveralls-python
         env:
