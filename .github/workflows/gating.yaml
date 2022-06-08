@@ -1,0 +1,130 @@
+name: Gating
+
+on:
+  pull_request:
+  push:
+  workflow_dispatch:
+    inputs: {}
+
+jobs:
+  tests:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.6"]
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v3
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get -y update
+          sudo apt-get -y install libkrb5-dev
+          python -m pip install --upgrade pip
+          pip install tox tox-gh-actions
+
+      - name: Test with tox
+        run: tox -e py
+
+      - name: Run coveralls-python
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          COVERALLS_FLAG_NAME: python-${{ matrix.python-version }}
+          COVERALLS_PARALLEL: true
+        run: |
+          pip3 install --upgrade pip
+          pip3 install --upgrade setuptools
+          pip3 install --upgrade coveralls==3.2.0
+          coveralls --service=github
+
+  coveralls-finish:
+    name: Finish coveralls-python
+    needs: tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Finished
+        run: |
+          pip3 install --upgrade pip
+          pip3 install --upgrade setuptools
+          pip3 install --upgrade coveralls
+          coveralls --finish --service=github
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  hadolint:
+    name: Hadolint
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        dockerfile:
+          - Dockerfile
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: hadolint/hadolint-action@v1.5.0
+        with:
+          dockerfile: ${{ matrix.dockerfile }}
+          # Ignore list:
+          # * DL3041 - Specify version with dnf install -y <package>-<version>
+          ignore: DL3041
+          failure-threshold: warning
+
+  image-build:
+    name: Container Image Build
+    needs: hadolint
+    runs-on: ubuntu-latest
+    env:
+      IMAGE_NAME: product-listings-manager
+      REGISTRY: quay.io/factory2
+      GH_REGISTRY: ghcr.io/${{ github.actor }}
+    strategy:
+      matrix:
+        python-version: ["3.6"]
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v3
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Get image tag from git branch
+        id: get-image-tag
+        run: |
+          export TAG=$(sed 's/[^0-9a-zA-Z_.-]/__/g' <<< "$GITHUB_REF_NAME") &&
+          echo "::set-output name=tag::$TAG"
+
+      - name: Build Image
+        id: build-image
+        uses: redhat-actions/buildah-build@v2
+        with:
+          image: ${{ env.IMAGE_NAME }}
+          tags: >-
+            ${{ steps.get-image-tag.outputs.tag }}
+            ${{ github.ref == 'refs/heads/master' && 'latest' || '' }}
+            ${{ github.sha }}
+          containerfiles: Dockerfile
+
+      - name: Log in to the image registry
+        if: github.event_name == 'push' && github.actor != 'dependabot[bot]'
+        uses: redhat-actions/podman-login@v1
+        with:
+          registry: ${{ secrets.REGISTRY_USER && env.REGISTRY || env.GH_REGISTRY }}
+          username: ${{ secrets.REGISTRY_USER || github.actor }}
+          password: ${{ secrets.REGISTRY_PASSWORD || secrets.GITHUB_TOKEN }}
+
+      - name: Push Image
+        if: github.event_name == 'push' && github.actor != 'dependabot[bot]'
+        uses: redhat-actions/push-to-registry@v2
+        with:
+          image: ${{ steps.build-image.outputs.image }}
+          tags: ${{ steps.build-image.outputs.tags }}
+          registry: ${{ secrets.REGISTRY_USER && env.REGISTRY || env.GH_REGISTRY }}
