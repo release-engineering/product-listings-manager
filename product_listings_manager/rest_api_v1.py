@@ -35,7 +35,10 @@ class Index(Resource):
 
 class About(Resource):
     def get(self):
-        return {"version": __version__}
+        return {
+            "source": "https://github.com/release-engineering/product-listings-manager",
+            "version": __version__,
+        }
 
 
 class Health(Resource):
