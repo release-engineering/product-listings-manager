@@ -198,7 +198,6 @@ class TestGetModuleProductListings(object):
         mock_get_product_info,
         mock_get_module_overrides,
     ):
-
         mock_trees_model.query.with_entities.return_value.join.return_value.filter.return_value.filter.return_value = [
             ("x86_64",),
         ]
