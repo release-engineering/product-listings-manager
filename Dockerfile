@@ -19,9 +19,6 @@ RUN yum -y install \
         python3-psycopg2 \
         python3-sqlalchemy
 
-RUN pip3 install \
-        flask-restful==0.3.8
-
 WORKDIR /var/www/product-listings-manager
 
 # Restore working tree from current git commit in container.
