@@ -1,29 +1,23 @@
-FROM registry.centos.org/centos:8
+FROM registry.fedoraproject.org/fedora:36
 LABEL \
     name="product-listings-manager" \
     vendor="product-listings-manager developers" \
     license="MIT" \
     build-date=""
 
-# https://www.centos.org/centos-linux-eol/
-RUN sed -i -e "s|mirrorlist=|#mirrorlist=|g" /etc/yum.repos.d/CentOS-* \
-    && sed -i -e "s|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g" /etc/yum.repos.d/CentOS-* \
-    && yum install -y epel-release \
-    && yum -y install \
+RUN yum -y install \
         --setopt=install_weak_deps=false \
         --setopt=tsflags=nodocs \
         git-core \
         python3 \
         python3-flask \
+        python3-flask-restful \
         python3-flask-sqlalchemy \
         python3-gunicorn \
         python3-koji \
         python3-pip \
         python3-psycopg2 \
         python3-sqlalchemy
-
-RUN pip3 install \
-        flask-restful==0.3.8
 
 WORKDIR /var/www/product-listings-manager
 
