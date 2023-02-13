@@ -1,0 +1,8 @@
+.git/
+.tox/
+.*_cache/
+__pycache__/
+dist/
+htmlcov/
+*.egg-info/
+Dockerfile

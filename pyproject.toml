@@ -1,0 +1,49 @@
+[tool.poetry]
+name = "product-listings-manager"
+version = "1.1.2"
+description = "HTTP interface for finding product listings and interacting with data in composedb."
+authors = [
+  "Ken Dreyer",
+  "Red Hat, Inc. and others"
+]
+license = "MIT"
+readme = "README.rst"
+repository = "https://github.com/release-engineering/product-listings-manager"
+homepage = "https://github.com/release-engineering/product-listings-manager"
+
+include = [
+    "LICENSE",
+    "README.rst",
+    "tox.ini",
+    "client.py",
+]
+
+[tool.poetry.dependencies]
+python = ">=3.9,<3.10"
+Flask = "^2.2.2"
+gunicorn = "^20.1.0"
+python-dateutil = "^2.8.2"
+
+flake8 = {version = "^6.0.0", optional = true}
+factory-boy = {version = "^3.2.1", optional = true}
+pytest = {version = "^7.2.1", optional = true}
+pytest-cov = {version = "^4.0.0", optional = true}
+mock = {version = "^5.0.1", optional = true}
+
+SQLAlchemy = "^1.4.41"
+psycopg2-binary = "^2.9.5"
+Flask-SQLAlchemy = "^3.0.3"
+Flask-RESTful = "^0.3.9"
+koji = "^1.31.1"
+
+[tool.poetry.extras]
+test = [
+    "flake8",
+    "pytest",
+    "pytest-cov",
+    "mock",
+]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

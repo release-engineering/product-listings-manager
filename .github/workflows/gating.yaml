@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.6"]
+        python-version: ["3.9"]
 
     steps:
       - uses: actions/checkout@v3
@@ -30,9 +30,7 @@ jobs:
           pip install tox
 
       - name: Test with tox
-        run: |
-          PY=py$(echo ${{ matrix.python-version }} | tr -d ".")
-          tox -e ${PY}
+        run: tox -e py
 
       - name: Run coveralls-python
         env:
@@ -58,6 +56,35 @@ jobs:
           coveralls --finish --service=github
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  linters:
+    name: Linters
+    strategy:
+      matrix:
+        tox_env:
+          - bandit
+          - black
+          - lint
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v3
+        with:
+          python-version: "3.9"
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get -y update
+          sudo apt-get -y install libkrb5-dev
+          python -m pip install --upgrade pip
+          pip install tox
+
+      - name: Test '${{ matrix.tox_env }}' with tox
+        run: tox -e ${{ matrix.tox_env }}
 
   hadolint:
     name: Hadolint
@@ -88,7 +115,7 @@ jobs:
       GH_REGISTRY: ghcr.io/${{ github.actor }}
     strategy:
       matrix:
-        python-version: ["3.6"]
+        python-version: ["3.9"]
 
     steps:
       - uses: actions/checkout@v3
@@ -97,6 +124,14 @@ jobs:
         uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install poetry tox
+
+      - name: Update the Application Version
+        run: poetry version "$(./get-version.sh)"
 
       - name: Get image tag from git branch
         id: get-image-tag
@@ -114,6 +149,8 @@ jobs:
             ${{ github.ref == 'refs/heads/master' && 'latest' || '' }}
             ${{ github.sha }}
           containerfiles: Dockerfile
+          build-args: |
+            GITHUB_SHA=${{ github.sha }}
 
       - name: Log in to the image registry
         if: github.event_name == 'push' && github.actor != 'dependabot[bot]'
