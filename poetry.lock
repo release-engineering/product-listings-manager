@@ -110,7 +110,7 @@ doc = ["sphinx", "sphinx-rtd-theme", "sphinxcontrib-spelling"]
 
 [[package]]
 name = "faker"
-version = "16.7.0"
+version = "16.8.1"
 description = "Faker is a Python package that generates fake data for you."
 category = "main"
 optional = true
@@ -519,7 +519,7 @@ watchdog = ["watchdog"]
 
 [[package]]
 name = "zipp"
-version = "3.12.1"
+version = "3.13.0"
 description = "Backport of pathlib-compatible object wrapper for zip files"
 category = "main"
 optional = false
@@ -705,8 +705,8 @@ exceptiongroup = [
 ]
 factory-boy = []
 faker = [
-    {file = "Faker-16.7.0-py3-none-any.whl", hash = "sha256:c522c78f2d7572724bde05de8571205e9a594f95b57e08e388e0677976ebd400"},
-    {file = "Faker-16.7.0.tar.gz", hash = "sha256:4b98c197169e083304afd12c1ee1e5101f5c817161c3d690eb318a15b805108d"},
+    {file = "Faker-16.8.1-py3-none-any.whl", hash = "sha256:64dcf95eee9f00d2547f29f6762aec80fc3ccbe3752bfa2c45082a6e2cc4d74a"},
+    {file = "Faker-16.8.1.tar.gz", hash = "sha256:ad181f6f9cdc0f7d70ea6eaea35ab4b6549391fbaaea7629cc567aeb2757d296"},
 ]
 flake8 = [
     {file = "flake8-6.0.0-py2.py3-none-any.whl", hash = "sha256:3833794e27ff64ea4e9cf5d410082a8b97ff1a06c16aa3d2027339cd0f1195c7"},
@@ -956,6 +956,6 @@ urllib3 = [
 ]
 werkzeug = []
 zipp = [
-    {file = "zipp-3.12.1-py3-none-any.whl", hash = "sha256:6c4fe274b8f85ec73c37a8e4e3fa00df9fb9335da96fb789e3b96b318e5097b3"},
-    {file = "zipp-3.12.1.tar.gz", hash = "sha256:a3cac813d40993596b39ea9e93a18e8a2076d5c378b8bc88ec32ab264e04ad02"},
+    {file = "zipp-3.13.0-py3-none-any.whl", hash = "sha256:e8b2a36ea17df80ffe9e2c4fda3f693c3dad6df1697d3cd3af232db680950b0b"},
+    {file = "zipp-3.13.0.tar.gz", hash = "sha256:23f70e964bc11a34cef175bc90ba2914e1e4545ea1e3e2f67c079671883f9cb6"},
 ]
