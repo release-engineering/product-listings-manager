@@ -1,4 +1,4 @@
-from flask import Blueprint, url_for
+from flask import Blueprint, current_app, url_for
 from flask_restful import Resource, Api
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -52,11 +52,13 @@ class Health(Resource):
         try:
             db.engine.execute("SELECT 1")
         except SQLAlchemyError as e:
+            current_app.logger.warning("DB health check failed: %s", e)
             return {"ok": False, "message": "DB Error: {}".format(e)}, 503
 
         try:
             products.get_koji_session().getAPIVersion()
         except Exception as e:
+            current_app.logger.warning("Koji health check failed: %s", e)
             return {"ok": False, "message": "Koji Error: {}".format(e)}, 503
 
         return {"ok": True, "message": "It works!"}
