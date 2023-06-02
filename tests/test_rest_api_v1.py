@@ -38,7 +38,7 @@ class TestAbout(object):
 
 
 class TestHealth(object):
-    @patch("product_listings_manager.rest_api_v1.db.engine.execute")
+    @patch("product_listings_manager.rest_api_v1.db.session.execute")
     def test_health_db_fail(self, mock_db, client):
         mock_db.side_effect = SQLAlchemyError("db connect error")
         r = client.get("/api/v1.0/health")
