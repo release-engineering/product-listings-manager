@@ -50,7 +50,7 @@ class Health(Resource):
         """
 
         try:
-            db.engine.execute("SELECT 1")
+            db.session.execute(db.text("SELECT 1"))
         except SQLAlchemyError as e:
             current_app.logger.warning("DB health check failed: %s", e)
             return {"ok": False, "message": "DB Error: {}".format(e)}, 503
