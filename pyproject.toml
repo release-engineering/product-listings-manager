@@ -26,13 +26,13 @@ python-dateutil = "^2.8.2"
 
 flake8 = {version = "^6.0.0", optional = true}
 factory-boy = {version = "^3.2.1", optional = true}
-pytest = {version = "^7.3.1", optional = true}
+pytest = {version = "^7.4.0", optional = true}
 pytest-cov = {version = "^4.1.0", optional = true}
 mock = {version = "^5.0.1", optional = true}
 
-SQLAlchemy = "^2.0.15"
+SQLAlchemy = "^2.0.17"
 psycopg2-binary = "^2.9.5"
-Flask-SQLAlchemy = "^3.0.3"
+Flask-SQLAlchemy = "^3.0.5"
 Flask-RESTful = "^0.3.10"
 koji = "^1.33.0"
 
