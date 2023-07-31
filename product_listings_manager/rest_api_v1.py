@@ -1,11 +1,13 @@
-from flask import Blueprint, current_app, url_for
+from flask import Blueprint, current_app, request, url_for
 from flask_restful import Resource, Api
 from sqlalchemy.exc import SQLAlchemyError
 
 from product_listings_manager import __version__, products, utils
 from product_listings_manager.models import db
+from product_listings_manager.auth import get_user
+from product_listings_manager.authorization import get_user_groups
 
-from werkzeug.exceptions import NotFound
+from werkzeug.exceptions import InternalServerError, NotFound
 
 blueprint = Blueprint("api_v1", __name__)
 
@@ -66,6 +68,25 @@ class Health(Resource):
         return {"ok": True, "message": "It works!"}
 
 
+class Login(Resource):
+    def get(self):
+        ldap_host = current_app.config.get("LDAP_HOST")
+        ldap_searches = current_app.config.get("LDAP_SEARCHES")
+
+        if not ldap_host or not ldap_searches:
+            raise InternalServerError(
+                "Server configuration LDAP_HOST and LDAP_SEARCHES is required."
+            )
+
+        user, headers = get_user(request)
+        groups = set(get_user_groups(user, ldap_host, ldap_searches))
+
+        return {
+            "user": user,
+            "groups": sorted(groups),
+        }
+
+
 class ProductInfo(Resource):
     def get(self, label):
         try:
@@ -121,6 +142,7 @@ api = Api(blueprint)
 api.add_resource(Index, "/")
 api.add_resource(About, "/about")
 api.add_resource(Health, "/health")
+api.add_resource(Login, "/login")
 api.add_resource(ProductInfo, "/product-info/<label>")
 api.add_resource(ProductLabels, "/product-labels")
 api.add_resource(ProductListings, "/product-listings/<label>/<build_info>")

@@ -1,5 +1,12 @@
 """PLM configuration module."""
+import json
 import os
+
+ENV_TO_CONFIG = (
+    ("SQLALCHEMY_DATABASE_URI", lambda x: x),
+    ("PLM_LDAP_HOST", lambda x: x),
+    ("PLM_LDAP_SEARCHES", json.loads),
+)
 
 
 class Config(object):
@@ -9,11 +16,23 @@ class Config(object):
     SQLALCHEMY_ECHO = False
     SQLALCHEMY_DATABASE_URI = "postgresql://user:pass@localhost/compose"
 
+    LDAP_HOST = None
+    LDAP_SEARCHES = []
+
 
 class DevConfig(Config):
     """Development config."""
 
     SQLALCHEMY_ECHO = True
+
+
+def load_config_from_env(app):
+    # It's convenient to overwrite default config via env var in container.
+    for env, transform in ENV_TO_CONFIG:
+        key = env[4:] if env.startswith("PLM_") else env
+        value = os.getenv(env)
+        if value:
+            app.config[key] = transform(value)
 
 
 def load_config(app):
@@ -27,8 +46,4 @@ def load_config(app):
 
     app.config.from_envvar("PLM_CONFIG_FILE", silent=True)
 
-    # It's convenient to overwrite default config via env var in container.
-    if os.getenv("SQLALCHEMY_DATABASE_URI"):
-        app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv(
-            "SQLALCHEMY_DATABASE_URI"
-        )
+    load_config_from_env(app)
