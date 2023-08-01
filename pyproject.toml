@@ -34,7 +34,7 @@ SQLAlchemy = "^2.0.17"
 psycopg2-binary = "^2.9.5"
 Flask-SQLAlchemy = "^3.0.5"
 Flask-RESTful = "^0.3.10"
-koji = "^1.33.0"
+koji = "^1.33.1"
 
 [tool.poetry.extras]
 test = [
