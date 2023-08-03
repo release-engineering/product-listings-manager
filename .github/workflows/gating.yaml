@@ -57,35 +57,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  linters:
-    name: Linters
-    strategy:
-      matrix:
-        tox_env:
-          - bandit
-          - black
-          - lint
-
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Set up Python
-        uses: actions/setup-python@v3
-        with:
-          python-version: "3.9"
-
-      - name: Install dependencies
-        run: |
-          sudo apt-get -y update
-          sudo apt-get -y install libkrb5-dev
-          python -m pip install --upgrade pip
-          pip install tox
-
-      - name: Test '${{ matrix.tox_env }}' with tox
-        run: tox -e ${{ matrix.tox_env }}
-
   hadolint:
     name: Hadolint
     runs-on: ubuntu-latest
@@ -97,13 +68,9 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - uses: hadolint/hadolint-action@v1.5.0
+      - uses: hadolint/hadolint-action@v3.1.0
         with:
           dockerfile: ${{ matrix.dockerfile }}
-          # Ignore list:
-          # * DL3041 - Specify version with dnf install -y <package>-<version>
-          ignore: DL3041
-          failure-threshold: warning
 
   image-build:
     name: Container Image Build

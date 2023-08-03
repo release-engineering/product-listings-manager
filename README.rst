@@ -122,6 +122,18 @@ Using the ``--live`` argument if you want to run against the live composedb inst
 
    $ pytest --cov=product_listings_manager --live tests
 
+Running the linters
+-------------------
+
+To run viable linters to check syntax of various files before commit, install
+[pre-commit](https://pre-commit.ci/) and run::
+
+    $ pre-commit install
+
+To run linters on all files (not just the ones changed in the last commit),
+run::
+
+    $ pre-commit run -a
 
 Configuring a local database
 ----------------------------

@@ -18,7 +18,9 @@ class DevConfig(Config):
 
 def load_config(app):
     app.config.from_object("product_listings_manager.config.Config")
-    app.config.from_pyfile("/etc/product-listings-manager/config.py", silent=True)
+    app.config.from_pyfile(
+        "/etc/product-listings-manager/config.py", silent=True
+    )
 
     if app.debug:
         app.config.from_object("product_listings_manager.config.DevConfig")
@@ -27,4 +29,6 @@ def load_config(app):
 
     # It's convenient to overwrite default config via env var in container.
     if os.getenv("SQLALCHEMY_DATABASE_URI"):
-        app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("SQLALCHEMY_DATABASE_URI")
+        app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv(
+            "SQLALCHEMY_DATABASE_URI"
+        )
