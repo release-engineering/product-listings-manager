@@ -12,7 +12,9 @@ SERVERS = {
 parser = argparse.ArgumentParser()
 parser.add_argument("server", choices=SERVERS.keys())
 parser.add_argument("--product", default="RHEL-6-Server-EXTRAS-6")
-parser.add_argument("--nvr", default="dumb-init-1.2.0-1.20170802gitd283f8a.el6")
+parser.add_argument(
+    "--nvr", default="dumb-init-1.2.0-1.20170802gitd283f8a.el6"
+)
 args = parser.parse_args()
 
 url = SERVERS[args.server]
@@ -23,7 +25,7 @@ def pretty_print_json(data):
 
 
 if args.server == "brew":
-    import xmlrpclib
+    import xmlrpclib  # nosec
 
     server = xmlrpclib.ServerProxy(url)
 
@@ -33,17 +35,21 @@ if args.server == "brew":
 
     # Test getProductListings
     # Example with brew CLI:
-    #  brew call getProductListings "RHEL-6-Server-EXTRAS-6" "dumb-init-1.2.0-1.20170802gitd283f8a.el6"
+    #  brew call getProductListings "RHEL-6-Server-EXTRAS-6" \
+    #    "dumb-init-1.2.0-1.20170802gitd283f8a.el6"
     result = server.getProductListings(args.product, args.nvr)
     pretty_print_json(result)
 else:
     import requests
 
     product_info_path = "/product-info/%s" % args.product
-    product_listings_path = "/product-listings/%s/%s" % (args.product, args.nvr)
+    product_listings_path = "/product-listings/%s/%s" % (
+        args.product,
+        args.nvr,
+    )
 
     for path in (product_info_path, product_listings_path):
-        result = requests.get(url + path)
+        result = requests.get(url + path, timeout=30)
         result.raise_for_status()
         data = result.json()
         pretty_print_json(data)

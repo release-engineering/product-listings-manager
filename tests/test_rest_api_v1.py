@@ -107,7 +107,9 @@ class TestProductListings(object):
 
     @patch("product_listings_manager.products.get_build")
     @patch("product_listings_manager.products.get_koji_session")
-    def test_get_product_listings(self, mock_koji_session, mock_get_build, client):
+    def test_get_product_listings(
+        self, mock_koji_session, mock_get_build, client
+    ):
         mock_get_build.return_value = {
             "id": 1,
             "package_name": self.pkg_name,
@@ -121,9 +123,17 @@ class TestProductListings(object):
             debuginfo_pkg_name, self.pkg_version, self.pkg_release
         )
         mock_koji_session.return_value.listRPMs.return_value = [
-            {"arch": "s390x", "name": debuginfo_pkg_name, "nvr": debuginfo_nvr},
+            {
+                "arch": "s390x",
+                "name": debuginfo_pkg_name,
+                "nvr": debuginfo_nvr,
+            },
             {"arch": "s390x", "name": self.pkg_name, "nvr": self.nvr},
-            {"arch": "x86_64", "name": debuginfo_pkg_name, "nvr": debuginfo_nvr},
+            {
+                "arch": "x86_64",
+                "name": debuginfo_pkg_name,
+                "nvr": debuginfo_nvr,
+            },
             {"arch": "x86_64", "name": self.pkg_name, "nvr": self.nvr},
             {"arch": "src", "name": self.pkg_name, "nvr": self.nvr},
         ]
@@ -152,10 +162,12 @@ class TestProductListings(object):
         }
 
     @patch("product_listings_manager.products.getProductListings")
-    def test_product_listings_not_found(self, mock_get_product_listings, client):
+    def test_product_listings_not_found(
+        self, mock_get_product_listings, client
+    ):
         error_message = "NOT FOUND"
-        mock_get_product_listings.side_effect = products.ProductListingsNotFoundError(
-            error_message
+        mock_get_product_listings.side_effect = (
+            products.ProductListingsNotFoundError(error_message)
         )
         r = client.get(self.path)
         assert r.status_code == 404
@@ -168,7 +180,9 @@ class TestProductListings(object):
         r = client.get(self.path)
         assert r.status_code == 500
         mock_log.assert_called_once_with(
-            "API call getProductListings() failed", self.product_label, self.nvr
+            "API call getProductListings() failed",
+            self.product_label,
+            self.nvr,
         )
 
     @patch("product_listings_manager.products.get_build")
@@ -200,7 +214,8 @@ class TestProductListings(object):
         )
         t.packages.append(pkg_src)
 
-        # Should return empty product listings because only src package found but allow_source_only=False
+        # Should return empty product listings because only src package found
+        # but allow_source_only=False
         r = client.get(self.path)
         assert r.status_code == 200
         assert r.get_json() == {}
@@ -217,19 +232,26 @@ class TestModuleProductListings(object):
     module_name = "ruby"
     module_stream = "2.5"
     nvr = "{}-{}-820181217154935.9edba152".format(module_name, module_stream)
-    path = "/api/v1.0/module-product-listings/{0}/{1}".format(product_label, nvr)
+    path = "/api/v1.0/module-product-listings/{0}/{1}".format(
+        product_label, nvr
+    )
 
     @patch("product_listings_manager.products.get_build")
     def test_get_module_product_listings(self, mock_get_build, client):
         mock_get_build.return_value = {
             "extra": {
                 "typeinfo": {
-                    "module": {"name": self.module_name, "stream": self.module_stream}
+                    "module": {
+                        "name": self.module_name,
+                        "stream": self.module_stream,
+                    }
                 }
             }
         }
         variant = "AppStream-8.0.0"
-        p = ProductsFactory(label=self.product_label, version="8.0.0", variant=variant)
+        p = ProductsFactory(
+            label=self.product_label, version="8.0.0", variant=variant
+        )
         m = ModulesFactory(name=self.module_name, stream=self.module_stream)
         t = TreesFactory()
         t.products.append(p)
@@ -240,7 +262,9 @@ class TestModuleProductListings(object):
         assert r.get_json() == {variant: [t.arch]}
 
     @patch("product_listings_manager.products.getModuleProductListings")
-    def test_product_listings_not_found(self, mock_get_module_product_listings, client):
+    def test_product_listings_not_found(
+        self, mock_get_module_product_listings, client
+    ):
         error_message = "NOT FOUND"
         mock_get_module_product_listings.side_effect = (
             products.ProductListingsNotFoundError(error_message)
@@ -256,7 +280,9 @@ class TestModuleProductListings(object):
         r = client.get(self.path)
         assert r.status_code == 500
         mock_log.assert_called_once_with(
-            "API call getModuleProductListings() failed", self.product_label, self.nvr
+            "API call getModuleProductListings() failed",
+            self.product_label,
+            self.nvr,
         )
 
 

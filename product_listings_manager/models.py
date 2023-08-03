@@ -4,9 +4,9 @@ These models are not fully relecting the composedb schema:
 
 - Tables and columns which not needed by PLM are not included.
 
-- Length of db.String() column is not required by postgresql(composedb uses it), in case of
-testing with other db backend(e.g. sqlite) a value is given in following definition and it
-has no side effect to postgresql(composedb).
+- Length of db.String() column is not required by postgresql(composedb uses
+  it), in case of testing with other db backend(e.g. sqlite) a value is given
+  in following definition and it has no side effect to postgresql(composedb).
 """
 from flask_sqlalchemy import SQLAlchemy
 
@@ -25,13 +25,25 @@ class Packages(db.Model):
     version = db.Column(db.String(255), nullable=False)
 
     def __repr__(self):
-        return "<Package %d %s %s %s>" % (self.id, self.name, self.version, self.arch)
+        return "<Package %d %s %s %s>" % (
+            self.id,
+            self.name,
+            self.version,
+            self.arch,
+        )
 
 
 tree_product_map = db.Table(
     "tree_product_map",
-    db.Column("tree_id", db.Integer, db.ForeignKey("trees.id"), primary_key=True),
-    db.Column("product_id", db.Integer, db.ForeignKey("products.id"), primary_key=True),
+    db.Column(
+        "tree_id", db.Integer, db.ForeignKey("trees.id"), primary_key=True
+    ),
+    db.Column(
+        "product_id",
+        db.Integer,
+        db.ForeignKey("products.id"),
+        primary_key=True,
+    ),
 )
 
 
@@ -45,7 +57,9 @@ class Products(db.Model):
     allow_source_only = db.Column(db.Boolean)
     module_overrides = db.relationship("ModuleOverrides", backref="productref")
     overrides = db.relationship("Overrides", backref="productref")
-    trees = db.relationship("Trees", secondary=tree_product_map, backref="products")
+    trees = db.relationship(
+        "Trees", secondary=tree_product_map, backref="products"
+    )
 
     def __repr__(self):
         return "<Product %d %s %s %s %s>" % (
@@ -59,17 +73,26 @@ class Products(db.Model):
 
 tree_packages = db.Table(
     "tree_packages",
-    db.Column("trees_id", db.Integer, db.ForeignKey("trees.id"), primary_key=True),
     db.Column(
-        "packages_id", db.Integer, db.ForeignKey("packages.id"), primary_key=True
+        "trees_id", db.Integer, db.ForeignKey("trees.id"), primary_key=True
+    ),
+    db.Column(
+        "packages_id",
+        db.Integer,
+        db.ForeignKey("packages.id"),
+        primary_key=True,
     ),
 )
 
 
 tree_modules = db.Table(
     "tree_modules",
-    db.Column("trees_id", db.Integer, db.ForeignKey("trees.id"), primary_key=True),
-    db.Column("modules_id", db.Integer, db.ForeignKey("modules.id"), primary_key=True),
+    db.Column(
+        "trees_id", db.Integer, db.ForeignKey("trees.id"), primary_key=True
+    ),
+    db.Column(
+        "modules_id", db.Integer, db.ForeignKey("modules.id"), primary_key=True
+    ),
 )
 
 
@@ -90,7 +113,12 @@ class Trees(db.Model):
     modules = db.relationship("Modules", secondary=tree_modules)
 
     def __repr__(self):
-        return "<Tree %d %s %s %s>" % (self.id, self.name, self.date, self.arch)
+        return "<Tree %d %s %s %s>" % (
+            self.id,
+            self.name,
+            self.date,
+            self.arch,
+        )
 
 
 class Overrides(db.Model):
@@ -105,7 +133,9 @@ class Overrides(db.Model):
     name = db.Column(db.String(255), primary_key=True)
     pkg_arch = db.Column(db.String(32), primary_key=True)
     product_arch = db.Column(db.String(32), primary_key=True)
-    product = db.Column(db.Integer, db.ForeignKey("products.id"), primary_key=True)
+    product = db.Column(
+        db.Integer, db.ForeignKey("products.id"), primary_key=True
+    )
     include = db.Column(db.Boolean, nullable=False)
 
     def __repr__(self):
@@ -137,7 +167,12 @@ class Modules(db.Model):
     version = db.Column(db.String(255), nullable=False)
 
     def __repr__(self):
-        return "<Module %d %s %s %s>" % (self.id, self.name, self.stream, self.version)
+        return "<Module %d %s %s %s>" % (
+            self.id,
+            self.name,
+            self.stream,
+            self.version,
+        )
 
 
 class ModuleOverrides(db.Model):
@@ -145,7 +180,9 @@ class ModuleOverrides(db.Model):
 
     name = db.Column(db.String(255), primary_key=True)
     stream = db.Column(db.String(255), primary_key=True)
-    product = db.Column(db.Integer, db.ForeignKey("products.id"), primary_key=True)
+    product = db.Column(
+        db.Integer, db.ForeignKey("products.id"), primary_key=True
+    )
     product_arch = db.Column(db.String(32), primary_key=True)
 
     def __repr__(self):

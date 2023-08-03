@@ -28,7 +28,8 @@ def pytest_addoption(parser):
 
 def pytest_configure(config):
     config.addinivalue_line(
-        "markers", "live: mark test as requiring live composedb and koji servers"
+        "markers",
+        "live: mark test as requiring live composedb and koji servers",
     )
 
 

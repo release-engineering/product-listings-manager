@@ -3,7 +3,9 @@ from mock import patch
 
 from product_listings_manager.app import create_app
 from product_listings_manager.models import MatchVersions as MatchVersionsModel
-from product_listings_manager.models import ModuleOverrides as ModuleOverridesModel
+from product_listings_manager.models import (
+    ModuleOverrides as ModuleOverridesModel,
+)
 from product_listings_manager.models import Products as ProductsModel
 from product_listings_manager.models import Overrides as OverridesModel
 from product_listings_manager.models import Trees as TreesModel
@@ -78,15 +80,22 @@ class TestProduct(object):
     def test_get_overrides(self, mock_overrides_model):
         label = "RHEL-7"
         version = "7.5"
-        mock_overrides_model.query.join.return_value.filter.return_value.all.return_value = [
+        mock_join = mock_overrides_model.query.join.return_value
+        mock_join.filter.return_value.all.return_value = [
             OverridesModel(
-                name="fake", pkg_arch="src", product_arch="x86_64", include=True
+                name="fake",
+                pkg_arch="src",
+                product_arch="x86_64",
+                include=True,
             ),
             OverridesModel(
                 name="fake", pkg_arch="src", product_arch="ppc64", include=True
             ),
             OverridesModel(
-                name="fake", pkg_arch="x86_64", product_arch="x86_64", include=False
+                name="fake",
+                pkg_arch="x86_64",
+                product_arch="x86_64",
+                include=False,
             ),
         ]
         assert Products.get_overrides(label, version) == {
@@ -99,7 +108,8 @@ class TestProduct(object):
     @patch("product_listings_manager.products.models.MatchVersions")
     def test_get_match_versions(self, mock_matchversions_model):
         product = "fake-product"
-        mock_matchversions_model.query.filter_by.return_value.all.return_value = [
+        mock_filter_by = mock_matchversions_model.query.filter_by.return_value
+        mock_filter_by.all.return_value = [
             MatchVersionsModel(name="fake1"),
             MatchVersionsModel(name="fake2"),
         ]
@@ -110,7 +120,9 @@ class TestProduct(object):
 
     @patch("product_listings_manager.products.models.Trees")
     def test_precalc_treelist(self, mock_trees_model):
-        mock_trees_model.query.join.return_value.order_by.return_value.filter.return_value.filter.return_value.all.return_value = [
+        mock_join = mock_trees_model.query.join.return_value
+        mock_join_order_by = mock_join.order_by.return_value
+        mock_join_order_by.filter.return_value.filter.return_value.all.return_value = [
             TreesModel(id=3, arch="x86_64"),
             TreesModel(id=2, arch="x86_64"),
             TreesModel(id=1, arch="ppc64"),
@@ -126,9 +138,13 @@ class TestProduct(object):
     def test_get_module_overrides(self, mock_moduleoverrides_model):
         module_name = "perl"
         module_stream = "5.24"
-        mock_moduleoverrides_model.query.join.return_value.filter.return_value.filter.return_value.all.return_value = [
+        mock_join = mock_moduleoverrides_model.query.join.return_value
+        mock_join.filter.return_value.filter.return_value.all.return_value = [
             ModuleOverridesModel(
-                name=module_name, stream=module_stream, product=1, product_arch="x86_64"
+                name=module_name,
+                stream=module_stream,
+                product=1,
+                product_arch="x86_64",
             ),
             ModuleOverridesModel(
                 name=module_name,
@@ -137,7 +153,10 @@ class TestProduct(object):
                 product_arch="ppc64le",
             ),
             ModuleOverridesModel(
-                name=module_name, stream=module_stream, product=1, product_arch="s390x"
+                name=module_name,
+                stream=module_stream,
+                product=1,
+                product_arch="s390x",
             ),
         ]
         assert Products.get_module_overrides(
@@ -146,7 +165,10 @@ class TestProduct(object):
 
     @patch("product_listings_manager.products.models.Products")
     def test_get_product_labels(self, mock_products_model):
-        mock_products_model.query.with_entities.return_value.distinct.return_value.all.return_value = [
+        mock_with_entities = (
+            mock_products_model.query.with_entities.return_value
+        )
+        mock_with_entities.distinct.return_value.all.return_value = [
             ProductsModel(label="label1"),
             ProductsModel(label="label2"),
         ]
@@ -198,7 +220,8 @@ class TestGetModuleProductListings(object):
         mock_get_product_info,
         mock_get_module_overrides,
     ):
-        mock_trees_model.query.with_entities.return_value.join.return_value.filter.return_value.filter.return_value = [
+        mock_with_entities = mock_trees_model.query.with_entities.return_value
+        mock_with_entities.join.return_value.filter.return_value.filter.return_value = [
             ("x86_64",),
         ]
         nvr = "perl-5.24-8010020190529084201.3af8e029"

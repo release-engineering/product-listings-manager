@@ -16,7 +16,9 @@ class Index(Resource):
         return {
             "about_url": url_for(".about", _external=True),
             "health_url": url_for(".health", _external=True),
-            "product_info_url": url_for(".productinfo", label=":label", _external=True),
+            "product_info_url": url_for(
+                ".productinfo", label=":label", _external=True
+            ),
             "product_labels_url": url_for(".productlabels", _external=True),
             "product_listings_url": url_for(
                 ".productlistings",
@@ -71,7 +73,9 @@ class ProductInfo(Resource):
         except products.ProductListingsNotFoundError as ex:
             raise NotFound(str(ex))
         except Exception:
-            utils.log_remote_call_error("API call getProductInfo() failed", label)
+            utils.log_remote_call_error(
+                "API call getProductInfo() failed", label
+            )
             raise
         return [versions, variants]
 
@@ -106,7 +110,9 @@ class ModuleProductListings(Resource):
             raise NotFound(str(ex))
         except Exception:
             utils.log_remote_call_error(
-                "API call getModuleProductListings() failed", label, module_build_nvr
+                "API call getModuleProductListings() failed",
+                label,
+                module_build_nvr,
             )
             raise
 
@@ -119,5 +125,6 @@ api.add_resource(ProductInfo, "/product-info/<label>")
 api.add_resource(ProductLabels, "/product-labels")
 api.add_resource(ProductListings, "/product-listings/<label>/<build_info>")
 api.add_resource(
-    ModuleProductListings, "/module-product-listings/<label>/<module_build_nvr>"
+    ModuleProductListings,
+    "/module-product-listings/<label>/<module_build_nvr>",
 )

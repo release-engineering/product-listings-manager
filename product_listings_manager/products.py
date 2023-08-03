@@ -99,15 +99,23 @@ class Products(object):
                 "Could not find a product with label: %s" % label
             )
 
-        return (versions[0], [x.variant for x in products if x.version == versions[0]])
+        return (
+            versions[0],
+            [x.variant for x in products if x.version == versions[0]],
+        )
 
     get_product_info = staticmethod(get_product_info)
 
     def get_overrides(product, version, variant=None):
-        """Returns the list of package overrides for the particular product specified."""
+        """
+        Returns the list of package overrides for the particular product specified.
+        """
 
-        query = models.Overrides.query.join(models.Overrides.productref).filter(
-            models.Products.label == product, models.Products.version == version
+        query = models.Overrides.query.join(
+            models.Overrides.productref
+        ).filter(
+            models.Products.label == product,
+            models.Products.version == version,
         )
         if variant:
             query = query.filter(models.Products.variant == variant)
@@ -128,15 +136,22 @@ class Products(object):
     get_overrides = staticmethod(get_overrides)
 
     def get_match_versions(product):
-        """Returns the list of packages for this product where we must match the version."""
+        """
+        Returns the list of packages for this product where we must match the version.
+        """
         return [
-            m.name for m in models.MatchVersions.query.filter_by(product=product).all()
+            m.name
+            for m in models.MatchVersions.query.filter_by(
+                product=product
+            ).all()
         ]
 
     get_match_versions = staticmethod(get_match_versions)
 
     def get_srconly_flag(product, version):
-        """BREW-260 - Returns allow_source_only field for the product and matching version."""
+        """
+        BREW-260 - Returns allow_source_only field for the product and matching version.
+        """
         q = models.Products.query.filter_by(
             label=product, version=version, allow_source_only=True
         )
@@ -154,7 +169,8 @@ class Products(object):
             models.Trees.query.join(models.Trees.products)
             .order_by(models.Trees.date.desc(), models.Trees.id.desc())
             .filter(
-                models.Products.label == product, models.Products.version == version
+                models.Products.label == product,
+                models.Products.version == version,
             )
         )
         if variant:
@@ -184,7 +200,9 @@ class Products(object):
             return dict((name, src_arch) for name in names)
 
         query = (
-            models.Trees.query.with_entities(models.Trees.arch, models.Packages.name)
+            models.Trees.query.with_entities(
+                models.Trees.arch, models.Packages.name
+            )
             .join(models.Trees.packages)
             .filter(
                 models.Packages.arch == src_arch,
@@ -243,7 +261,9 @@ class Products(object):
     @staticmethod
     def get_product_labels():
         rows = (
-            models.Products.query.with_entities(models.Products.label).distinct().all()
+            models.Products.query.with_entities(models.Products.label)
+            .distinct()
+            .all()
         )
         return [{"label": row.label} for row in rows]
 
@@ -303,7 +323,9 @@ def getProductListings(productLabel, buildInfo):
                 rpm_version = None
 
         # without debuginfos
-        rpms_nondebug = [rpm for rpm in rpms if not koji.is_debuginfo(rpm["name"])]
+        rpms_nondebug = [
+            rpm for rpm in rpms if not koji.is_debuginfo(rpm["name"])
+        ]
         d = {}
         all_archs = set([rpm["arch"] for rpm in rpms_nondebug])
         for arch in all_archs:
@@ -324,9 +346,9 @@ def getProductListings(productLabel, buildInfo):
                 for x in dest_archs:
                     cache_map[srpm][rpm["arch"]][x] = 1
             for dest_arch in dest_archs:
-                listings.setdefault(variant, {}).setdefault(rpm["nvr"], {}).setdefault(
-                    rpm["arch"], []
-                ).append(dest_arch)
+                listings.setdefault(variant, {}).setdefault(
+                    rpm["nvr"], {}
+                ).setdefault(rpm["arch"], []).append(dest_arch)
 
         # debuginfo only
         rpms_debug = [rpm for rpm in rpms if koji.is_debuginfo(rpm["name"])]
@@ -350,9 +372,9 @@ def getProductListings(productLabel, buildInfo):
                 for x in dest_archs:
                     cache_map[srpm][rpm["arch"]][x] = 1
             for dest_arch in dest_archs:
-                listings.setdefault(variant, {}).setdefault(rpm["nvr"], {}).setdefault(
-                    rpm["arch"], []
-                ).append(dest_arch)
+                listings.setdefault(variant, {}).setdefault(
+                    rpm["nvr"], {}
+                ).setdefault(rpm["arch"], []).append(dest_arch)
 
         for variant in list(listings.keys()):
             nvrs = list(listings[variant].keys())
@@ -377,7 +399,9 @@ def getModuleProductListings(productLabel, moduleNVR):
         module_name = module["name"]
         module_stream = module["stream"]
     except (KeyError, TypeError):
-        raise ProductListingsNotFoundError("It's not a module build: %s" % moduleNVR)
+        raise ProductListingsNotFoundError(
+            "It's not a module build: %s" % moduleNVR
+        )
 
     prodinfo = Products.get_product_info(productLabel)
     version, variants = prodinfo

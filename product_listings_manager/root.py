@@ -4,7 +4,9 @@ from flask_restful import Resource, Api
 blueprint = Blueprint("/", __name__)
 
 
-DOCUMENTATION_URL = "https://github.com/release-engineering/product-listings-manager"
+DOCUMENTATION_URL = (
+    "https://github.com/release-engineering/product-listings-manager"
+)
 
 
 class Index(Resource):
