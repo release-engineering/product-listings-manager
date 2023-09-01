@@ -6,6 +6,7 @@ import logging
 import re
 
 import koji
+
 from product_listings_manager import models
 
 logger = logging.getLogger(__name__)
