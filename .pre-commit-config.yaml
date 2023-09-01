@@ -7,15 +7,38 @@ repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.4.0
     hooks:
+      - id: check-merge-conflict
+      - id: check-yaml
       - id: debug-statements
       - id: end-of-file-fixer
       - id: trailing-whitespace
 
+  # Linter
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.0.285
     hooks:
       - id: ruff
+        args:
+          # ignore: E501 Line too long
+          - --ignore=E501
 
+  # Sort imports
+  - repo: https://github.com/pycqa/isort
+    rev: 5.12.0
+    hooks:
+      - id: isort
+        name: isort
+        args:
+          - --line-length=79
+          - --profile=black
+
+  # Remove unused imports, variables, statements
+  - repo: https://github.com/PyCQA/autoflake
+    rev: v2.2.1
+    hooks:
+      - id: autoflake
+
+  # Auto-formatter
   - repo: https://github.com/psf/black
     rev: 23.7.0
     hooks:
@@ -24,6 +47,15 @@ repos:
         args:
           - --line-length=79
 
+  # Auto-update syntax
+  - repo: https://github.com/asottile/pyupgrade
+    rev: v3.10.1
+    hooks:
+      - id: pyupgrade
+        args:
+          - --py39-plus
+
+  # Security linter
   - repo: https://github.com/pycqa/bandit
     rev: 1.7.5
     hooks:
@@ -31,6 +63,7 @@ repos:
         name: bandit
         exclude: tests/
 
+  # Dockerfile linter
   - repo: https://github.com/hadolint/hadolint
     rev: v2.12.1-beta
     hooks:

@@ -3,8 +3,8 @@ import base64
 import binascii
 
 import gssapi
-from flask import current_app, Response
-from werkzeug.exceptions import Unauthorized, Forbidden
+from flask import Response, current_app
+from werkzeug.exceptions import Forbidden, Unauthorized
 
 
 # Inspired by https://github.com/mkomitee/flask-kerberos/blob/master/flask_kerberos.py

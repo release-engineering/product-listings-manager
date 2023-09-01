@@ -1,16 +1,18 @@
-from mock import patch
+from unittest.mock import patch
 
 from sqlalchemy.exc import SQLAlchemyError
 
 from product_listings_manager import products
 
-from .factories import PackagesFactory
-from .factories import ProductsFactory
-from .factories import ModulesFactory
-from .factories import TreesFactory
+from .factories import (
+    ModulesFactory,
+    PackagesFactory,
+    ProductsFactory,
+    TreesFactory,
+)
 
 
-class TestIndex(object):
+class TestIndex:
     def test_get_index(self, client):
         r = client.get("/api/v1.0/")
         expected_json = {
@@ -25,7 +27,7 @@ class TestIndex(object):
         assert r.get_json() == expected_json
 
 
-class TestAbout(object):
+class TestAbout:
     def test_get_version(self, client):
         from product_listings_manager import __version__
 
@@ -37,7 +39,7 @@ class TestAbout(object):
         }
 
 
-class TestHealth(object):
+class TestHealth:
     @patch("product_listings_manager.rest_api_v1.db.session.execute")
     def test_health_db_fail(self, mock_db, client):
         mock_db.side_effect = SQLAlchemyError("db connect error")
@@ -64,9 +66,9 @@ class TestHealth(object):
         assert r.get_json() == {"ok": True, "message": "It works!"}
 
 
-class TestProductInfo(object):
+class TestProductInfo:
     product_label = "Fake-product"
-    path = "/api/v1.0/product-info/{0}".format(product_label)
+    path = f"/api/v1.0/product-info/{product_label}"
 
     def test_get_product_info(self, client):
         product_version = "7.3"
@@ -97,13 +99,13 @@ class TestProductInfo(object):
         )
 
 
-class TestProductListings(object):
+class TestProductListings:
     product_label = "RHEL-6-Server-EXTRAS-6"
     pkg_name = "dumb-init"
     pkg_version = "1.2.0"
     pkg_release = "1.20170802gitd283f8a.el6"
-    nvr = "{}-{}-{}".format(pkg_name, pkg_version, pkg_release)
-    path = "/api/v1.0/product-listings/{0}/{1}".format(product_label, nvr)
+    nvr = f"{pkg_name}-{pkg_version}-{pkg_release}"
+    path = f"/api/v1.0/product-listings/{product_label}/{nvr}"
 
     @patch("product_listings_manager.products.get_build")
     @patch("product_listings_manager.products.get_koji_session")
@@ -118,7 +120,7 @@ class TestProductListings(object):
         }
 
         # mock result of koji listRPMs() API
-        debuginfo_pkg_name = "{}-debuginfo".format(self.pkg_name)
+        debuginfo_pkg_name = f"{self.pkg_name}-debuginfo"
         debuginfo_nvr = "{}-{}-{}".format(
             debuginfo_pkg_name, self.pkg_version, self.pkg_release
         )
@@ -227,14 +229,12 @@ class TestProductListings(object):
         assert r.get_json() == {variant: {self.nvr: {"src": ["x86_64"]}}}
 
 
-class TestModuleProductListings(object):
+class TestModuleProductListings:
     product_label = "RHEL-8.0.0"
     module_name = "ruby"
     module_stream = "2.5"
-    nvr = "{}-{}-820181217154935.9edba152".format(module_name, module_stream)
-    path = "/api/v1.0/module-product-listings/{0}/{1}".format(
-        product_label, nvr
-    )
+    nvr = f"{module_name}-{module_stream}-820181217154935.9edba152"
+    path = f"/api/v1.0/module-product-listings/{product_label}/{nvr}"
 
     @patch("product_listings_manager.products.get_build")
     def test_get_module_product_listings(self, mock_get_build, client):
@@ -286,7 +286,7 @@ class TestModuleProductListings(object):
         )
 
 
-class TestLabels(object):
+class TestLabels:
     @patch("product_listings_manager.products.getProductLabels")
     @patch("product_listings_manager.utils.log_remote_call_error")
     def test_unknown_error(self, mock_log, mock_getlabels, client):

@@ -1,12 +1,12 @@
 # Flask < 1.0 does not have get_json.
-import os
 import json
+import os
+
 import pytest
 from flask import Response
 
 from product_listings_manager.app import create_app
 from product_listings_manager.models import db
-
 
 if not hasattr(Response, "get_json"):
 

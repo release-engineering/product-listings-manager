@@ -1,10 +1,13 @@
-from product_listings_manager.app import create_app
-from product_listings_manager.products import Products
-from product_listings_manager.products import getProductInfo
-from product_listings_manager.products import getProductListings
-from product_listings_manager.products import getModuleProductListings
-from product_listings_manager.products import getProductLabels
 import pytest
+
+from product_listings_manager.app import create_app
+from product_listings_manager.products import (
+    Products,
+    getModuleProductListings,
+    getProductInfo,
+    getProductLabels,
+    getProductListings,
+)
 
 
 @pytest.fixture(scope="module")
@@ -15,7 +18,7 @@ def app():
 
 
 @pytest.mark.live
-class TestProductLive(object):
+class TestProductLive:
     def test_get_product_info(self, app):
         product = "RHEL-6-Server-EXTRAS-6"
         result = Products.get_product_info(product)
@@ -23,7 +26,7 @@ class TestProductLive(object):
 
 
 @pytest.mark.live
-class TestGetProductInfo(object):
+class TestGetProductInfo:
     def test_simple(self, app):
         label = "RHEL-6-Server-EXTRAS-6"
         result = getProductInfo(label)
@@ -31,7 +34,7 @@ class TestGetProductInfo(object):
 
 
 @pytest.mark.live
-class TestGetProductListings(object):
+class TestGetProductListings:
     def test_simple(self, app):
         label = "RHEL-6-Server-EXTRAS-6"
         build = "dumb-init-1.2.0-1.20170802gitd283f8a.el6"
@@ -51,7 +54,7 @@ class TestGetProductListings(object):
 
 
 @pytest.mark.live
-class TestGetModuleProductListings(object):
+class TestGetModuleProductListings:
     def test_getModuleProductListings(self, app):
         label = "RHEL-8.0.0"
         module = "ruby-2.5-820190111110530.9edba152"
@@ -63,7 +66,7 @@ class TestGetModuleProductListings(object):
 
 
 @pytest.mark.live
-class TestProductLabels(object):
+class TestProductLabels:
     def test_getProductLabels(self, app):
         result = getProductLabels()
         assert len(result) > 1200

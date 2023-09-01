@@ -1,13 +1,15 @@
 import datetime
-import factory
-from factory.fuzzy import FuzzyNaiveDateTime
-from factory.fuzzy import FuzzyText
 
-from product_listings_manager.models import db
-from product_listings_manager.models import Packages
-from product_listings_manager.models import Products
-from product_listings_manager.models import Trees
-from product_listings_manager.models import Modules
+import factory
+from factory.fuzzy import FuzzyNaiveDateTime, FuzzyText
+
+from product_listings_manager.models import (
+    Modules,
+    Packages,
+    Products,
+    Trees,
+    db,
+)
 
 
 class BaseFactory(factory.alchemy.SQLAlchemyModelFactory):

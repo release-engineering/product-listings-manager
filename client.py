@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from __future__ import print_function
+
 import argparse
 import json
 
@@ -43,7 +43,7 @@ else:
     import requests
 
     product_info_path = "/product-info/%s" % args.product
-    product_listings_path = "/product-listings/%s/%s" % (
+    product_listings_path = "/product-listings/{}/{}".format(
         args.product,
         args.nvr,
     )
