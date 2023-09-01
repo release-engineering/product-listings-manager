@@ -1,13 +1,12 @@
 from flask import Blueprint, current_app, request, url_for
-from flask_restful import Resource, Api
+from flask_restful import Api, Resource
 from sqlalchemy.exc import SQLAlchemyError
+from werkzeug.exceptions import InternalServerError, NotFound
 
 from product_listings_manager import __version__, products, utils
-from product_listings_manager.models import db
 from product_listings_manager.auth import get_user
 from product_listings_manager.authorization import get_user_groups
-
-from werkzeug.exceptions import InternalServerError, NotFound
+from product_listings_manager.models import db
 
 blueprint = Blueprint("api_v1", __name__)
 
@@ -57,13 +56,13 @@ class Health(Resource):
             db.session.execute(db.text("SELECT 1"))
         except SQLAlchemyError as e:
             current_app.logger.warning("DB health check failed: %s", e)
-            return {"ok": False, "message": "DB Error: {}".format(e)}, 503
+            return {"ok": False, "message": f"DB Error: {e}"}, 503
 
         try:
             products.get_koji_session().getAPIVersion()
         except Exception as e:
             current_app.logger.warning("Koji health check failed: %s", e)
-            return {"ok": False, "message": "Koji Error: {}".format(e)}, 503
+            return {"ok": False, "message": f"Koji Error: {e}"}, 503
 
         return {"ok": True, "message": "It works!"}
 

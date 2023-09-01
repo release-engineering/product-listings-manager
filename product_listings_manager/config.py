@@ -9,7 +9,7 @@ ENV_TO_CONFIG = (
 )
 
 
-class Config(object):
+class Config:
     """Default config."""
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False

@@ -1,20 +1,23 @@
+from unittest.mock import patch
+
 import pytest
-from mock import patch
 
 from product_listings_manager.app import create_app
 from product_listings_manager.models import MatchVersions as MatchVersionsModel
 from product_listings_manager.models import (
     ModuleOverrides as ModuleOverridesModel,
 )
-from product_listings_manager.models import Products as ProductsModel
 from product_listings_manager.models import Overrides as OverridesModel
+from product_listings_manager.models import Products as ProductsModel
 from product_listings_manager.models import Trees as TreesModel
-from product_listings_manager.products import Products
-from product_listings_manager.products import ProductListingsNotFoundError
-from product_listings_manager.products import getProductInfo
-from product_listings_manager.products import getProductListings
-from product_listings_manager.products import getModuleProductListings
-from product_listings_manager.products import getProductLabels
+from product_listings_manager.products import (
+    ProductListingsNotFoundError,
+    Products,
+    getModuleProductListings,
+    getProductInfo,
+    getProductLabels,
+    getProductListings,
+)
 
 
 @pytest.fixture(scope="module")
@@ -24,7 +27,7 @@ def app():
         yield app
 
 
-class TestProduct(object):
+class TestProduct:
     def test_score(self):
         assert 0 == Products.score("Test1")
         assert 1 == Products.score("alpha")
@@ -72,7 +75,7 @@ class TestProduct(object):
         label = "Fake-label"
         with pytest.raises(ProductListingsNotFoundError) as excinfo:
             Products.get_product_info(label)
-        assert "Could not find a product with label: {}".format(label) == str(
+        assert f"Could not find a product with label: {label}" == str(
             excinfo.value
         )
 
@@ -178,7 +181,7 @@ class TestProduct(object):
         ]
 
 
-class TestGetProductInfo(object):
+class TestGetProductInfo:
     @patch("product_listings_manager.products.Products.get_product_info")
     def test_getProductInfo(self, mock_get_product_info):
         label = "Fake-label"
@@ -186,26 +189,26 @@ class TestGetProductInfo(object):
         mock_get_product_info.assert_called_once_with(label)
 
 
-class TestGetProductListings(object):
+class TestGetProductListings:
     @patch("product_listings_manager.products.get_koji_session")
     def test_rpms_not_found(self, mock_get_koji_session):
         mock_get_koji_session.return_value.listRPMs.return_value = []
         build = "fake-build-1.0-1.el6"
         with pytest.raises(ProductListingsNotFoundError) as excinfo:
             getProductListings("fake-label", build)
-        assert "Could not find any RPMs for build: {}".format(build) == str(
+        assert f"Could not find any RPMs for build: {build}" == str(
             excinfo.value
         )
 
 
-class TestGetModuleProductListings(object):
+class TestGetModuleProductListings:
     @patch("product_listings_manager.products.get_build")
     def test_not_module_build(self, mock_get_build):
         mock_get_build.return_value = {"name": "perl"}
         nvr = "perl-5.16.3-1.el7"
         with pytest.raises(ProductListingsNotFoundError) as excinfo:
             getModuleProductListings("fake-label", nvr)
-        assert "It's not a module build: {}".format(nvr) == str(excinfo.value)
+        assert f"It's not a module build: {nvr}" == str(excinfo.value)
 
     @patch("product_listings_manager.products.Products.get_module_overrides")
     @patch("product_listings_manager.products.Products.get_product_info")
@@ -240,7 +243,7 @@ class TestGetModuleProductListings(object):
         }
 
 
-class TestProductLabels(object):
+class TestProductLabels:
     @patch("product_listings_manager.products.Products.get_product_labels")
     def test_getProductLabels(self, mock_get_product_labels):
         getProductLabels()

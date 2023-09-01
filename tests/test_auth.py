@@ -1,9 +1,9 @@
 import base64
 import json
+from unittest.mock import ANY, patch
 
 from gssapi.exceptions import GSSError
-from ldap import LDAPError, SERVER_DOWN
-from mock import ANY, patch
+from ldap import SERVER_DOWN, LDAPError
 from pytest import fixture, mark
 
 from product_listings_manager.config import load_config_from_env
@@ -43,7 +43,7 @@ def ldap_connection(client):
         yield ldap_connection
 
 
-class TestLogin(object):
+class TestLogin:
     def test_login_unconfigured(self, client):
         r = client.get("/api/v1.0/login")
         assert r.status_code == 500, r.text

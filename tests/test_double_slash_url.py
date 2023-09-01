@@ -1,4 +1,4 @@
-class TestDoubleSlashURL(object):
+class TestDoubleSlashURL:
     def test_double_slash_url(self, client):
         r = client.get("/api//v1.0/", follow_redirects=True)
         assert r.status_code == 200

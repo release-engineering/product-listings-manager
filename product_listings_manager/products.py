@@ -2,9 +2,10 @@
 
 import copy
 import functools
-import koji
 import logging
 import re
+
+import koji
 
 from product_listings_manager import models
 
@@ -32,7 +33,7 @@ def get_build(nvr, session=None):
     except koji.GenericError as ex:
         raise ProductListingsNotFoundError(str(ex))
 
-    logger.debug("Build info: {}".format(build))
+    logger.debug(f"Build info: {build}")
     return build
 
 
@@ -46,7 +47,7 @@ def _cmp(a, b):
     return (a > b) - (a < b)
 
 
-class Products(object):
+class Products:
     """
     Class to hold methods related to product information.
     """
@@ -197,7 +198,7 @@ class Products(object):
         """Return a list of arches that this package/arch combination ships on."""
 
         if trees is None:
-            return dict((name, src_arch) for name in names)
+            return {name: src_arch for name in names}
 
         query = (
             models.Trees.query.with_entities(
@@ -327,7 +328,7 @@ def getProductListings(productLabel, buildInfo):
             rpm for rpm in rpms if not koji.is_debuginfo(rpm["name"])
         ]
         d = {}
-        all_archs = set([rpm["arch"] for rpm in rpms_nondebug])
+        all_archs = {rpm["arch"] for rpm in rpms_nondebug}
         for arch in all_archs:
             d[arch] = Products.dest_get_archs(
                 treelist,
@@ -353,7 +354,7 @@ def getProductListings(productLabel, buildInfo):
         # debuginfo only
         rpms_debug = [rpm for rpm in rpms if koji.is_debuginfo(rpm["name"])]
         d = {}
-        all_archs = set([rpm["arch"] for rpm in rpms_debug])
+        all_archs = {rpm["arch"] for rpm in rpms_debug}
         for arch in all_archs:
             d[arch] = Products.dest_get_archs(
                 treelist,

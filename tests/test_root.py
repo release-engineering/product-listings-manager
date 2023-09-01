@@ -1,4 +1,4 @@
-class TestRoot(object):
+class TestRoot:
     def test_get_version(self, client):
         r = client.get("/")
         expected_docs = (

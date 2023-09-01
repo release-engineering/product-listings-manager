@@ -139,7 +139,7 @@ class Overrides(db.Model):
     include = db.Column(db.Boolean, nullable=False)
 
     def __repr__(self):
-        return "<Overrides %s %s %s %s %s>" % (
+        return "<Overrides {} {} {} {} {}>".format(
             self.name,
             self.pkg_arch,
             self.product_arch,
@@ -155,7 +155,9 @@ class MatchVersions(db.Model):
     product = db.Column(db.String(100), primary_key=True)
 
     def __repr__(self):
-        return "<MatchVersion %s %s %s>" % (self.id, self.name, self.product)
+        return "<MatchVersion {} {} {}>".format(
+            self.id, self.name, self.product
+        )
 
 
 class Modules(db.Model):

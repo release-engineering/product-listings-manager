@@ -1,5 +1,5 @@
 from flask import Blueprint, url_for
-from flask_restful import Resource, Api
+from flask_restful import Api, Resource
 
 blueprint = Blueprint("/", __name__)
 

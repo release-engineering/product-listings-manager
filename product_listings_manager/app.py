@@ -1,6 +1,6 @@
 from flask import Flask, jsonify
 
-from product_listings_manager import root, rest_api_v1
+from product_listings_manager import rest_api_v1, root
 from product_listings_manager.config import load_config
 from product_listings_manager.logger import init_logging
 from product_listings_manager.models import db
