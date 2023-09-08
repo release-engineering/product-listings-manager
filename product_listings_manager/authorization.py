@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: GPL-2.0+
 import logging
+from collections.abc import Generator
+from dataclasses import dataclass
 
 import ldap
 from werkzeug.exceptions import BadGateway
@@ -7,7 +9,15 @@ from werkzeug.exceptions import BadGateway
 log = logging.getLogger(__name__)
 
 
-def get_group_membership(user, ldap_connection, ldap_search):
+@dataclass
+class LdapConfig:
+    host: str
+    searches: list[dict[str, str]]
+
+
+def get_group_membership(
+    user: str, ldap_connection, ldap_search: dict[str, str]
+) -> list[str]:
     results = ldap_connection.search_s(
         ldap_search["BASE"],
         ldap.SCOPE_SUBTREE,
@@ -17,13 +27,13 @@ def get_group_membership(user, ldap_connection, ldap_search):
     return [group[1]["cn"][0].decode("utf-8") for group in results]
 
 
-def get_user_groups(user, ldap_host, ldap_searches):
+def get_user_groups(
+    user: str, ldap_config: LdapConfig
+) -> Generator[str, None, None]:
     try:
-        ldap_connection = ldap.initialize(ldap_host)
-        for cur_ldap_search in ldap_searches:
-            yield from get_group_membership(
-                user, ldap_connection, cur_ldap_search
-            )
+        ldap_connection = ldap.initialize(ldap_config.host)
+        for ldap_search in ldap_config.searches:
+            yield from get_group_membership(user, ldap_connection, ldap_search)
     except ldap.SERVER_DOWN:
         log.exception("The LDAP server is unreachable")
         raise BadGateway("The LDAP server is unreachable")

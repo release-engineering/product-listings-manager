@@ -61,6 +61,7 @@ class Products:
         re.compile(r"^U\d+(-beta)?$", re.I),
     ]
 
+    @staticmethod
     def score(release):
         map = Products.all_release_types
         i = len(map) - 1
@@ -70,8 +71,7 @@ class Products:
             i = i - 1
         return i
 
-    score = staticmethod(score)
-
+    @staticmethod
     def my_sort(x, y):
         if len(x) > len(y) and y == x[: len(y)]:
             return -1
@@ -84,8 +84,7 @@ class Products:
         else:
             return _cmp(x_score, y_score)
 
-    my_sort = staticmethod(my_sort)
-
+    @staticmethod
     def get_product_info(label):
         """Get the latest version of product and it's variants."""
         products = models.Products.query.filter_by(label=label).all()
@@ -105,8 +104,7 @@ class Products:
             [x.variant for x in products if x.version == versions[0]],
         )
 
-    get_product_info = staticmethod(get_product_info)
-
+    @staticmethod
     def get_overrides(product, version, variant=None):
         """
         Returns the list of package overrides for the particular product specified.
@@ -134,8 +132,7 @@ class Products:
             )
         return overrides
 
-    get_overrides = staticmethod(get_overrides)
-
+    @staticmethod
     def get_match_versions(product):
         """
         Returns the list of packages for this product where we must match the version.
@@ -147,8 +144,7 @@ class Products:
             ).all()
         ]
 
-    get_match_versions = staticmethod(get_match_versions)
-
+    @staticmethod
     def get_srconly_flag(product, version):
         """
         BREW-260 - Returns allow_source_only field for the product and matching version.
@@ -158,8 +154,7 @@ class Products:
         )
         return models.db.session.query(q.exists()).scalar()
 
-    get_srconly_flag = staticmethod(get_srconly_flag)
-
+    @staticmethod
     def precalc_treelist(product, version, variant=None):
         """Returns the list of trees to consider.
 
@@ -190,8 +185,7 @@ class Products:
                     trees[arch] = id
         return list(trees.values()) + list(compat_trees.values())
 
-    precalc_treelist = staticmethod(precalc_treelist)
-
+    @staticmethod
     def dest_get_archs(
         trees, src_arch, names, cache_entry, version=None, overrides=None
     ):
@@ -237,8 +231,7 @@ class Products:
                         del ret[name][tree_arch]
         return ret
 
-    dest_get_archs = staticmethod(dest_get_archs)
-
+    @staticmethod
     def get_module_overrides(
         product, version, module_name, module_stream, variant=None
     ):
@@ -256,8 +249,6 @@ class Products:
             query = query.filter(models.Products.variant == variant)
 
         return [row.product_arch for row in query.all()]
-
-    get_module_overrides = staticmethod(get_module_overrides)
 
     @staticmethod
     def get_product_labels():

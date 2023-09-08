@@ -9,11 +9,14 @@ These models are not fully relecting the composedb schema:
   in following definition and it has no side effect to postgresql(composedb).
 """
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.ext.declarative import DeclarativeMeta
 
 db = SQLAlchemy()
 
+BaseModel: DeclarativeMeta = db.Model
 
-class Packages(db.Model):
+
+class Packages(BaseModel):
     """packages table in composedb.
 
     Only needed columns in packages table are defined here.
@@ -47,7 +50,7 @@ tree_product_map = db.Table(
 )
 
 
-class Products(db.Model):
+class Products(BaseModel):
     """products table in composedb."""
 
     id = db.Column(db.Integer, primary_key=True)
@@ -96,7 +99,7 @@ tree_modules = db.Table(
 )
 
 
-class Trees(db.Model):
+class Trees(BaseModel):
     """trees table in composedb."""
 
     id = db.Column(db.Integer, primary_key=True)
@@ -121,7 +124,7 @@ class Trees(db.Model):
         )
 
 
-class Overrides(db.Model):
+class Overrides(BaseModel):
     """overrides table in composedb.
 
     Many columns are set as primary key becasue primary key is required
@@ -148,7 +151,7 @@ class Overrides(db.Model):
         )
 
 
-class MatchVersions(db.Model):
+class MatchVersions(BaseModel):
     """match_versions table in composedb."""
 
     name = db.Column(db.String(255), primary_key=True)
@@ -160,7 +163,7 @@ class MatchVersions(db.Model):
         )
 
 
-class Modules(db.Model):
+class Modules(BaseModel):
     """modules table in composedb."""
 
     id = db.Column(db.Integer, primary_key=True)
@@ -177,7 +180,7 @@ class Modules(db.Model):
         )
 
 
-class ModuleOverrides(db.Model):
+class ModuleOverrides(BaseModel):
     """module_overrides table in composedb."""
 
     name = db.Column(db.String(255), primary_key=True)

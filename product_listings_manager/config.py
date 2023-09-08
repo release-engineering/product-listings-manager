@@ -1,11 +1,22 @@
 """PLM configuration module."""
 import json
 import os
+from typing import Any
+
+
+def read_json_file(filename: str):
+    if not filename:
+        return None
+
+    with open(filename) as f:
+        return json.load(f)
+
 
 ENV_TO_CONFIG = (
     ("SQLALCHEMY_DATABASE_URI", lambda x: x),
     ("PLM_LDAP_HOST", lambda x: x),
     ("PLM_LDAP_SEARCHES", json.loads),
+    ("PLM_PERMISSIONS", lambda x: read_json_file(x) or []),
 )
 
 
@@ -16,8 +27,10 @@ class Config:
     SQLALCHEMY_ECHO = False
     SQLALCHEMY_DATABASE_URI = "postgresql://user:pass@localhost/compose"
 
-    LDAP_HOST = None
-    LDAP_SEARCHES = []
+    LDAP_HOST: str = ""
+    LDAP_SEARCHES: list[dict[str, str]] = []
+
+    PERMISSIONS: list[dict[str, Any]] = []
 
 
 class DevConfig(Config):
