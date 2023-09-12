@@ -1,14 +1,42 @@
+# SPDX-License-Identifier: GPL-2.0+
+from typing import Any
+
 from flask import Blueprint, current_app, request, url_for
 from flask_restful import Api, Resource
 from sqlalchemy.exc import SQLAlchemyError
-from werkzeug.exceptions import InternalServerError, NotFound
+from werkzeug.exceptions import InternalServerError, NotFound, Unauthorized
 
 from product_listings_manager import __version__, products, utils
 from product_listings_manager.auth import get_user
-from product_listings_manager.authorization import get_user_groups
+from product_listings_manager.authorization import LdapConfig, get_user_groups
+from product_listings_manager.db_queries import (
+    execute_queries,
+    queries_from_user_input,
+    validate_queries,
+)
 from product_listings_manager.models import db
+from product_listings_manager.permissions import has_permission
 
 blueprint = Blueprint("api_v1", __name__)
+
+
+def ldap_config() -> LdapConfig:
+    ldap_host = current_app.config.get("LDAP_HOST")
+    ldap_searches = current_app.config.get("LDAP_SEARCHES")
+
+    if not ldap_host or not ldap_searches:
+        raise InternalServerError(
+            "Server configuration LDAP_HOST and LDAP_SEARCHES is required."
+        )
+
+    return LdapConfig(host=ldap_host, searches=ldap_searches)
+
+
+def permissions() -> list[dict[str, Any]]:
+    """
+    Return PERMISSIONS configuration.
+    """
+    return current_app.config.get("PERMISSIONS", [])
 
 
 class Index(Resource):
@@ -69,16 +97,9 @@ class Health(Resource):
 
 class Login(Resource):
     def get(self):
-        ldap_host = current_app.config.get("LDAP_HOST")
-        ldap_searches = current_app.config.get("LDAP_SEARCHES")
-
-        if not ldap_host or not ldap_searches:
-            raise InternalServerError(
-                "Server configuration LDAP_HOST and LDAP_SEARCHES is required."
-            )
-
+        ldap_config_ = ldap_config()
         user, headers = get_user(request)
-        groups = set(get_user_groups(user, ldap_host, ldap_searches))
+        groups = set(get_user_groups(user, ldap_config_))
 
         return {
             "user": user,
@@ -137,6 +158,32 @@ class ModuleProductListings(Resource):
             raise
 
 
+class Permissions(Resource):
+    def get(self):
+        return permissions()
+
+
+class DBQuery(Resource):
+    def post(self):
+        ldap_config_ = ldap_config()
+        user, headers = get_user(request)
+        input = request.get_json(force=True)
+        queries = queries_from_user_input(input)
+        validate_queries(queries)
+
+        if not has_permission(user, queries, permissions(), ldap_config_):
+            current_app.logger.warning("Unauthorized access for user %s", user)
+            raise Unauthorized(
+                f"User {user} is not authorized to use this query"
+            )
+
+        current_app.logger.info(
+            "Authorized access for user %s; input: %s", user, input
+        )
+
+        return execute_queries(queries), 200
+
+
 api = Api(blueprint)
 api.add_resource(Index, "/")
 api.add_resource(About, "/about")
@@ -149,3 +196,5 @@ api.add_resource(
     ModuleProductListings,
     "/module-product-listings/<label>/<module_build_nvr>",
 )
+api.add_resource(Permissions, "/permissions")
+api.add_resource(DBQuery, "/dbquery")

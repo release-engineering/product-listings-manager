@@ -1,6 +1,7 @@
+---
 name: Gating
 
-on:
+"on":
   pull_request:
   push:
   workflow_dispatch:
@@ -31,6 +32,9 @@ jobs:
 
       - name: Test with tox
         run: tox -e py
+
+      - name: Test with mypy
+        run: tox -e mypy
 
       - name: Run coveralls-python
         env:
