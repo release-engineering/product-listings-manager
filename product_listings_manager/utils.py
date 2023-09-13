@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-2.0+
 import traceback
 
 from flask import current_app, request
