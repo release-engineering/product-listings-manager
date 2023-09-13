@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-2.0+
-from fnmatch import fnmatch
+from fnmatch import fnmatchcase
 from typing import Any
 
 from product_listings_manager.authorization import LdapConfig, get_user_groups
@@ -7,7 +7,7 @@ from product_listings_manager.authorization import LdapConfig, get_user_groups
 
 def query_matches(query: str, permission: dict[str, Any]) -> bool:
     return any(
-        fnmatch(query.upper(), pattern.upper())
+        fnmatchcase(query.upper(), pattern.upper())
         for pattern in permission.get("queries", [])
     )
 

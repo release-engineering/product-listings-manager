@@ -26,7 +26,10 @@ def mock_koji_session():
     with patch(
         "product_listings_manager.products.koji.ClientSession"
     ) as mocked:
-        yield mocked()
+        with patch(
+            "product_listings_manager.products.koji.read_config", autospec=True
+        ):
+            yield mocked()
 
 
 class TestIndex:
