@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-2.0+
-from unittest.mock import ANY
+from unittest.mock import ANY, patch
 
 from pytest import mark
 
@@ -24,8 +24,8 @@ class TestDBQuery:
             "/api/v1.0/dbquery", json=input, headers=auth_headers()
         )
         assert r.status_code == 400, r.text
-        assert r.json == {"message": ANY}
-        assert r.json["message"].startswith(
+        assert r.json() == {"message": ANY}
+        assert r.json()["message"].startswith(
             "Parameter must have the following format"
         )
 
@@ -35,7 +35,7 @@ class TestDBQuery:
             "/api/v1.0/dbquery", json=query, headers=auth_headers()
         )
         assert r.status_code == 401, r.text
-        assert r.json == {
+        assert r.json() == {
             "message": "User test_user is not authorized to use this query"
         }
 
@@ -45,16 +45,19 @@ class TestDBQuery:
             "/api/v1.0/dbquery", json=queries, headers=auth_headers()
         )
         assert r.status_code == 401, r.text
-        assert r.json == {
+        assert r.json() == {
             "message": "User test_user is not authorized to use this query"
         }
 
     def test_db_query_unauthorized_no_matching_groups(self, auth_client):
         query = "SELECT * FROM products"
-        auth_client.application.config["PERMISSIONS"] = []
-        r = auth_client.post(
-            "/api/v1.0/dbquery", json=query, headers=auth_headers()
-        )
+        with patch(
+            "product_listings_manager.rest_api_v1.parse_permissions",
+            return_value=[],
+        ):
+            r = auth_client.post(
+                "/api/v1.0/dbquery", json=query, headers=auth_headers()
+            )
         assert r.status_code == 401, r.text
 
     def test_db_query_select_bad(self, auth_client):
@@ -63,8 +66,8 @@ class TestDBQuery:
             "/api/v1.0/dbquery", json={"query": query}, headers=auth_headers()
         )
         assert r.status_code == 400, r.text
-        assert r.json == {"message": ANY}
-        assert r.json["message"].startswith("DB query failed: ")
+        assert r.json() == {"message": ANY}
+        assert r.json()["message"].startswith("DB query failed: ")
 
     @mark.parametrize(
         "query",
@@ -77,14 +80,14 @@ class TestDBQuery:
     )
     def test_db_query_select(self, auth_client, query):
         p1 = ProductsFactory(label="product1", version="1.2", variant="Client")
-        p2 = ProductsFactory(label="product2", version="1.2", variant="Server")
+        p2 = ProductsFactory(label="product2", version="2.3", variant="Server")
         r = auth_client.post(
             "/api/v1.0/dbquery", json={"query": query}, headers=auth_headers()
         )
         assert r.status_code == 200, r.text
-        assert r.json == [
+        assert r.json() == [
             [p1.id, "product1", "1.2", "Client"],
-            [p2.id, "product2", "1.2", "Server"],
+            [p2.id, "product2", "2.3", "Server"],
         ]
 
     def test_db_query_insert(self, auth_client):
@@ -113,7 +116,7 @@ class TestDBQuery:
             )
             assert r.status_code == 200, r.text
 
-        assert r.json == [["product1", "1.2", "Client", 1]]
+        assert r.json() == [["product1", "1.2", "Client", 1]]
 
     def test_db_query_insert_with_select(self, auth_client):
         queries = [
@@ -137,7 +140,7 @@ class TestDBQuery:
             headers=auth_headers(),
         )
         assert r.status_code == 200, r.text
-        assert r.json == [["product1", "1.2", "Client", 1]]
+        assert r.json() == [["product1", "1.2", "Client", 1]]
 
     def test_db_query_insert_with_rollback(self, auth_client):
         queries = [
@@ -162,7 +165,7 @@ class TestDBQuery:
             headers=auth_headers(),
         )
         assert r.status_code == 200, r.text
-        assert r.json == []
+        assert r.json() == []
 
     def test_db_query_rollback_after_failure(self, auth_client):
         queries = [
@@ -177,10 +180,10 @@ class TestDBQuery:
             headers=auth_headers(),
         )
         assert r.status_code == 400, r.text
-        assert r.json == {"message": ANY}
-        assert r.json["message"].startswith("DB query failed: ")
-        assert "('product1', null, 'Client', 1)" in r.json["message"]
-        assert "NOT NULL constraint failed" in r.json["message"]
+        assert r.json() == {"message": ANY}
+        assert r.json()["message"].startswith("DB query failed: ")
+        assert "('product1', null, 'Client', 1)" in r.json()["message"]
+        assert "NOT NULL constraint failed" in r.json()["message"]
 
         r = auth_client.post(
             "/api/v1.0/dbquery",
@@ -188,4 +191,4 @@ class TestDBQuery:
             headers=auth_headers(),
         )
         assert r.status_code == 200, r.text
-        assert r.json == []
+        assert r.json() == []

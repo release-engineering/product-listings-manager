@@ -4,16 +4,52 @@ These models are not fully relecting the composedb schema:
 
 - Tables and columns which not needed by PLM are not included.
 
-- Length of db.String() column is not required by postgresql(composedb uses
+- Length of String() column is not required by postgresql(composedb uses
   it), in case of testing with other db backend(e.g. sqlite) a value is given
   in following definition and it has no side effect to postgresql(composedb).
 """
-from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy.ext.declarative import DeclarativeMeta
+import os
 
-db = SQLAlchemy()
+from sqlalchemy import (
+    Boolean,
+    Column,
+    DateTime,
+    ForeignKey,
+    Integer,
+    String,
+    create_engine,
+)
+from sqlalchemy.orm import DeclarativeBase, relationship, sessionmaker
+from sqlalchemy.pool import StaticPool
 
-BaseModel: DeclarativeMeta = db.Model
+DATABASE_URL = os.getenv("SQLALCHEMY_DATABASE_URI", "sqlite://")
+
+if DATABASE_URL.startswith("sqlite://"):
+    engine = create_engine(
+        DATABASE_URL,
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+else:
+    engine = create_engine(DATABASE_URL)
+
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+
+class BaseModel(DeclarativeBase):
+    pass
+
+
+if os.getenv("PLM_INIT_DB") == "1":
+    BaseModel.metadata.create_all(bind=engine)
+
+
+async def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 
 class Packages(BaseModel):
@@ -22,10 +58,12 @@ class Packages(BaseModel):
     Only needed columns in packages table are defined here.
     """
 
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(255), nullable=False)
-    arch = db.Column(db.String(32), nullable=False)
-    version = db.Column(db.String(255), nullable=False)
+    __tablename__ = "packages"
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String(255), nullable=False)
+    arch = Column(String(32), nullable=False)
+    version = Column(String(255), nullable=False)
 
     def __repr__(self):
         return "<Package %d %s %s %s>" % (
@@ -36,32 +74,31 @@ class Packages(BaseModel):
         )
 
 
-tree_product_map = db.Table(
-    "tree_product_map",
-    db.Column(
-        "tree_id", db.Integer, db.ForeignKey("trees.id"), primary_key=True
-    ),
-    db.Column(
-        "product_id",
-        db.Integer,
-        db.ForeignKey("products.id"),
+class TreeProductMap(BaseModel):
+    __tablename__ = "tree_product_map"
+
+    tree_id = Column(Integer, ForeignKey("trees.id"), primary_key=True)
+    product_id = Column(
+        Integer,
+        ForeignKey("products.id"),
         primary_key=True,
-    ),
-)
+    )
 
 
 class Products(BaseModel):
     """products table in composedb."""
 
-    id = db.Column(db.Integer, primary_key=True)
-    label = db.Column(db.String(100), nullable=False)
-    version = db.Column(db.String(100), nullable=False)
-    variant = db.Column(db.String(200))
-    allow_source_only = db.Column(db.Boolean)
-    module_overrides = db.relationship("ModuleOverrides", backref="productref")
-    overrides = db.relationship("Overrides", backref="productref")
-    trees = db.relationship(
-        "Trees", secondary=tree_product_map, backref="products"
+    __tablename__ = "products"
+
+    id = Column(Integer, primary_key=True)
+    label = Column(String(100), nullable=False)
+    version = Column(String(100), nullable=False)
+    variant = Column(String(200))
+    allow_source_only = Column(Boolean)
+    module_overrides = relationship("ModuleOverrides", backref="productref")
+    overrides = relationship("Overrides", backref="productref")
+    trees = relationship(
+        "Trees", secondary="tree_product_map", backref="products"
     )
 
     def __repr__(self):
@@ -74,46 +111,41 @@ class Products(BaseModel):
         )
 
 
-tree_packages = db.Table(
-    "tree_packages",
-    db.Column(
-        "trees_id", db.Integer, db.ForeignKey("trees.id"), primary_key=True
-    ),
-    db.Column(
-        "packages_id",
-        db.Integer,
-        db.ForeignKey("packages.id"),
+class TreePackages(BaseModel):
+    __tablename__ = "tree_packages"
+
+    trees_id = Column(Integer, ForeignKey("trees.id"), primary_key=True)
+    packages_id = Column(
+        Integer,
+        ForeignKey("packages.id"),
         primary_key=True,
-    ),
-)
+    )
 
 
-tree_modules = db.Table(
-    "tree_modules",
-    db.Column(
-        "trees_id", db.Integer, db.ForeignKey("trees.id"), primary_key=True
-    ),
-    db.Column(
-        "modules_id", db.Integer, db.ForeignKey("modules.id"), primary_key=True
-    ),
-)
+class TreeModules(BaseModel):
+    __tablename__ = "tree_modules"
+
+    trees_id = Column(Integer, ForeignKey("trees.id"), primary_key=True)
+    modules_id = Column(Integer, ForeignKey("modules.id"), primary_key=True)
 
 
 class Trees(BaseModel):
     """trees table in composedb."""
 
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(255), nullable=False)
-    buildname = db.Column(db.String(255), nullable=False)
-    date = db.Column(db.DateTime, nullable=False)
-    arch = db.Column(db.String(10), nullable=False)
-    treetype = db.Column(db.String(255))
-    treeinfo = db.Column(db.String(255))
-    imported = db.Column(db.Integer, nullable=False)
-    product = db.Column(db.Integer)
-    compatlayer = db.Column(db.Boolean, nullable=False)
-    packages = db.relationship("Packages", secondary=tree_packages)
-    modules = db.relationship("Modules", secondary=tree_modules)
+    __tablename__ = "trees"
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String(255), nullable=False)
+    buildname = Column(String(255), nullable=False)
+    date = Column(DateTime, nullable=False)
+    arch = Column(String(10), nullable=False)
+    treetype = Column(String(255))
+    treeinfo = Column(String(255))
+    imported = Column(Integer, nullable=False)
+    product = Column(Integer)
+    compatlayer = Column(Boolean, nullable=False)
+    packages = relationship("Packages", secondary="tree_packages")
+    modules = relationship("Modules", secondary="tree_modules")
 
     def __repr__(self):
         return "<Tree %d %s %s %s>" % (
@@ -133,13 +165,13 @@ class Overrides(BaseModel):
     https://docs.sqlalchemy.org/en/latest/faq/ormconfiguration.html#how-do-i-map-a-table-that-has-no-primary-key
     """
 
-    name = db.Column(db.String(255), primary_key=True)
-    pkg_arch = db.Column(db.String(32), primary_key=True)
-    product_arch = db.Column(db.String(32), primary_key=True)
-    product = db.Column(
-        db.Integer, db.ForeignKey("products.id"), primary_key=True
-    )
-    include = db.Column(db.Boolean, nullable=False)
+    __tablename__ = "overrides"
+
+    name = Column(String(255), primary_key=True)
+    pkg_arch = Column(String(32), primary_key=True)
+    product_arch = Column(String(32), primary_key=True)
+    product = Column(Integer, ForeignKey("products.id"), primary_key=True)
+    include = Column(Boolean, nullable=False)
 
     def __repr__(self):
         return "<Overrides {} {} {} {} {}>".format(
@@ -154,8 +186,10 @@ class Overrides(BaseModel):
 class MatchVersions(BaseModel):
     """match_versions table in composedb."""
 
-    name = db.Column(db.String(255), primary_key=True)
-    product = db.Column(db.String(100), primary_key=True)
+    __tablename__ = "match_versions"
+
+    name = Column(String(255), primary_key=True)
+    product = Column(String(100), primary_key=True)
 
     def __repr__(self):
         return "<MatchVersion {} {} {}>".format(
@@ -166,10 +200,12 @@ class MatchVersions(BaseModel):
 class Modules(BaseModel):
     """modules table in composedb."""
 
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(255), nullable=False)
-    stream = db.Column(db.String(255), nullable=False)
-    version = db.Column(db.String(255), nullable=False)
+    __tablename__ = "modules"
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String(255), nullable=False)
+    stream = Column(String(255), nullable=False)
+    version = Column(String(255), nullable=False)
 
     def __repr__(self):
         return "<Module %d %s %s %s>" % (
@@ -183,12 +219,12 @@ class Modules(BaseModel):
 class ModuleOverrides(BaseModel):
     """module_overrides table in composedb."""
 
-    name = db.Column(db.String(255), primary_key=True)
-    stream = db.Column(db.String(255), primary_key=True)
-    product = db.Column(
-        db.Integer, db.ForeignKey("products.id"), primary_key=True
-    )
-    product_arch = db.Column(db.String(32), primary_key=True)
+    __tablename__ = "module_overrides"
+
+    name = Column(String(255), primary_key=True)
+    stream = Column(String(255), primary_key=True)
+    product = Column(Integer, ForeignKey("products.id"), primary_key=True)
+    product_arch = Column(String(32), primary_key=True)
 
     def __repr__(self):
         return "<ModuleOverrides %s %s %d %s>" % (

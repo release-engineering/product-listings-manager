@@ -4,22 +4,24 @@ import factory
 from factory.fuzzy import FuzzyNaiveDateTime, FuzzyText
 
 from product_listings_manager.models import (
+    BaseModel,
     Modules,
     Packages,
     Products,
+    SessionLocal,
     Trees,
-    db,
+    engine,
 )
 
+BaseModel.metadata.create_all(bind=engine)
 
-class BaseFactory(factory.alchemy.SQLAlchemyModelFactory):
+
+class BaseFactoryWithID(factory.alchemy.SQLAlchemyModelFactory):
     class Meta:
         abstract = True
-        sqlalchemy_session = db.session
+        sqlalchemy_session = SessionLocal()
         sqlalchemy_session_persistence = "commit"
 
-
-class BaseFactoryWithID(BaseFactory):
     id = factory.Sequence(lambda n: n)
 
 

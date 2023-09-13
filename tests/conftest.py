@@ -1,14 +1,13 @@
 # SPDX-License-Identifier: GPL-2.0+
 import base64
 import json
-import os
 from unittest.mock import patch
 
+from fastapi.testclient import TestClient
 from pytest import fixture, mark
 
 from product_listings_manager.app import create_app
-from product_listings_manager.config import load_config_from_env
-from product_listings_manager.models import db
+from product_listings_manager.models import BaseModel, SessionLocal
 
 LDAP_HOST = "ldap://ldap.example.com"
 LDAP_BASE = "ou=Groups,dc=example,dc=com"
@@ -60,18 +59,24 @@ def pytest_collection_modifyitems(config, items):
 
 
 @fixture
-def app():
-    os.environ["SQLALCHEMY_DATABASE_URI"] = "sqlite://"
-    app = create_app()
-    with app.app_context():
-        db.create_all()
-        yield app
+def db():
+    db = SessionLocal()
+    try:
+        BaseModel.metadata.drop_all(bind=db.bind)
+        BaseModel.metadata.create_all(bind=db.bind)
+        yield db
+    finally:
+        db.close()
+
+
+@fixture
+def app(db):
+    yield create_app()
 
 
 @fixture
 def client(app):
-    client = app.test_client()
-    yield client
+    yield TestClient(app)
 
 
 @fixture
@@ -108,7 +113,6 @@ def auth_client(
         json.dump(PERMISSIONS, f)
     monkeypatch.setenv("PLM_PERMISSIONS", str(permissions_file))
 
-    load_config_from_env(client.application)
     yield client
 
 

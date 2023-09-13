@@ -83,5 +83,6 @@ CMD [ \
     "--bind=0.0.0.0:5000", \
     "--access-logfile=-", \
     "--enable-stdio-inheritance", \
+    "--worker-class=uvicorn.workers.UvicornWorker", \
     "product_listings_manager.wsgi" \
     ]

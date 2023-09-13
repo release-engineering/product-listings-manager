@@ -2,7 +2,6 @@ from unittest.mock import patch
 
 import pytest
 
-from product_listings_manager.app import create_app
 from product_listings_manager.models import MatchVersions as MatchVersionsModel
 from product_listings_manager.models import (
     ModuleOverrides as ModuleOverridesModel,
@@ -12,78 +11,81 @@ from product_listings_manager.models import Products as ProductsModel
 from product_listings_manager.models import Trees as TreesModel
 from product_listings_manager.products import (
     ProductListingsNotFoundError,
-    Products,
-    getModuleProductListings,
-    getProductInfo,
-    getProductLabels,
-    getProductListings,
+    get_match_versions,
+    get_module_overrides,
+    get_module_product_listings,
+    get_overrides,
+    get_product_info,
+    get_product_labels,
+    get_product_listings,
+    my_sort,
+    precalc_treelist,
+    score,
 )
 
 
-@pytest.fixture(scope="module")
-def app():
-    app = create_app()
-    with app.app_context():
-        yield app
+@pytest.fixture
+def db():
+    with patch(
+        "product_listings_manager.models.SessionLocal", autospec=True
+    ) as mocked:
+        yield mocked()
 
 
 class TestProduct:
     def test_score(self):
-        assert 0 == Products.score("Test1")
-        assert 1 == Products.score("alpha")
-        assert 2 == Products.score("BETA3")
-        assert 3 == Products.score("rc")
-        assert 4 == Products.score("Gold")
-        assert 5 == Products.score("U5")
-        assert 5 == Products.score("U1-beta")
-        assert -1 == Products.score("other")
+        assert 0 == score("Test1")
+        assert 1 == score("alpha")
+        assert 2 == score("BETA3")
+        assert 3 == score("rc")
+        assert 4 == score("Gold")
+        assert 5 == score("U5")
+        assert 5 == score("U1-beta")
+        assert -1 == score("other")
 
     def test_my_sort(self):
         # x starts with y
-        assert -1 == Products.my_sort("U1-beta", "U1")
+        assert -1 == my_sort("U1-beta", "U1")
 
         # y starts with x
-        assert 1 == Products.my_sort("U1", "U1-beta")
+        assert 1 == my_sort("U1", "U1-beta")
 
         # score(x) == score(y)
-        assert -1 == Products.my_sort("7.1", "7.2")
-        assert -1 == Products.my_sort("U3", "U4")
-        assert 1 == Products.my_sort("7.2", "7.1")
-        assert 1 == Products.my_sort("U4", "U3")
-        assert 0 == Products.my_sort("8.0.0", "8.0.0")
+        assert -1 == my_sort("7.1", "7.2")
+        assert -1 == my_sort("U3", "U4")
+        assert 1 == my_sort("7.2", "7.1")
+        assert 1 == my_sort("U4", "U3")
+        assert 0 == my_sort("8.0.0", "8.0.0")
 
         # score(x) != score(y)
-        assert -1 == Products.my_sort("Beta1", "Gold")
-        assert 1 == Products.my_sort("6.9", "6.3")
-        assert 1 == Products.my_sort("8.1", "8.0.0")
+        assert -1 == my_sort("Beta1", "Gold")
+        assert 1 == my_sort("6.9", "6.3")
+        assert 1 == my_sort("8.1", "8.0.0")
 
-    @patch("product_listings_manager.products.models.Products")
-    def test_get_product_info(self, mock_products_model):
+    def test_get_product_info(self, db):
         label = "RHEL-7"
-        mock_products_model.query.filter_by.return_value.all.return_value = [
+        db.query(ProductsModel).filter_by.return_value.all.return_value = [
             ProductsModel(id=1, label=label, version="7.2", variant="Server"),
             ProductsModel(id=2, label=label, version="7.3", variant="Server"),
             ProductsModel(id=3, label=label, version="7.4", variant="Server"),
             ProductsModel(id=4, label=label, version="7.4", variant="Client"),
         ]
-        result = Products.get_product_info(label)
+        result = get_product_info(db, label)
         assert result == ("7.4", ["Server", "Client"])
 
-    @patch("product_listings_manager.products.models.Products")
-    def test_get_product_info_not_found(self, mock_products_model):
-        mock_products_model.query.filter_by.return_value.all.return_value = []
+    def test_get_product_info_not_found(self, db):
+        db.query(ProductsModel).filter_by.return_value.all.return_value = []
         label = "Fake-label"
         with pytest.raises(ProductListingsNotFoundError) as excinfo:
-            Products.get_product_info(label)
+            get_product_info(db, label)
         assert f"Could not find a product with label: {label}" == str(
             excinfo.value
         )
 
-    @patch("product_listings_manager.products.models.Overrides")
-    def test_get_overrides(self, mock_overrides_model):
+    def test_get_overrides(self, db):
         label = "RHEL-7"
         version = "7.5"
-        mock_join = mock_overrides_model.query.join.return_value
+        mock_join = db.query(OverridesModel).join.return_value
         mock_join.filter.return_value.all.return_value = [
             OverridesModel(
                 name="fake",
@@ -101,29 +103,27 @@ class TestProduct:
                 include=False,
             ),
         ]
-        assert Products.get_overrides(label, version) == {
+        assert get_overrides(db, label, version) == {
             "fake": {
                 "src": {"ppc64": True, "x86_64": True},
                 "x86_64": {"x86_64": False},
             }
         }
 
-    @patch("product_listings_manager.products.models.MatchVersions")
-    def test_get_match_versions(self, mock_matchversions_model):
+    def test_get_match_versions(self, db):
         product = "fake-product"
-        mock_filter_by = mock_matchversions_model.query.filter_by.return_value
+        mock_filter_by = db.query(MatchVersionsModel).filter_by.return_value
         mock_filter_by.all.return_value = [
             MatchVersionsModel(name="fake1"),
             MatchVersionsModel(name="fake2"),
         ]
-        assert Products.get_match_versions(product) == ["fake1", "fake2"]
+        assert get_match_versions(db, product) == ["fake1", "fake2"]
 
     def test_get_srconly_flag(self):
         pass
 
-    @patch("product_listings_manager.products.models.Trees")
-    def test_precalc_treelist(self, mock_trees_model):
-        mock_join = mock_trees_model.query.join.return_value
+    def test_precalc_treelist(self, db):
+        mock_join = db.query(TreesModel).join.return_value
         mock_join_order_by = mock_join.order_by.return_value
         mock_join_order_by.filter.return_value.filter.return_value.all.return_value = [
             TreesModel(id=3, arch="x86_64"),
@@ -131,17 +131,16 @@ class TestProduct:
             TreesModel(id=1, arch="ppc64"),
         ]
         assert sorted(
-            Products.precalc_treelist("fake-product", "7.5", "Server")
+            precalc_treelist(db, "fake-product", "7.5", "Server")
         ) == sorted([1, 3])
 
     def test_dest_get_archs(self):
         pass
 
-    @patch("product_listings_manager.products.models.ModuleOverrides")
-    def test_get_module_overrides(self, mock_moduleoverrides_model):
+    def test_get_module_overrides(self, db):
         module_name = "perl"
         module_stream = "5.24"
-        mock_join = mock_moduleoverrides_model.query.join.return_value
+        mock_join = db.query(ModuleOverridesModel).join.return_value
         mock_join.filter.return_value.filter.return_value.all.return_value = [
             ModuleOverridesModel(
                 name=module_name,
@@ -162,40 +161,29 @@ class TestProduct:
                 product_arch="s390x",
             ),
         ]
-        assert Products.get_module_overrides(
-            "fake", "fake", module_name, module_stream, "fake"
+        assert get_module_overrides(
+            db, "fake", "fake", module_name, module_stream, "fake"
         ) == ["x86_64", "ppc64le", "s390x"]
 
-    @patch("product_listings_manager.products.models.Products")
-    def test_get_product_labels(self, mock_products_model):
-        mock_with_entities = (
-            mock_products_model.query.with_entities.return_value
-        )
+    def test_get_product_labels(self, db):
+        mock_with_entities = db.query(ProductsModel).with_entities.return_value
         mock_with_entities.distinct.return_value.all.return_value = [
             ProductsModel(label="label1"),
             ProductsModel(label="label2"),
         ]
-        assert Products.get_product_labels() == [
+        assert get_product_labels(db) == [
             {"label": "label1"},
             {"label": "label2"},
         ]
 
 
-class TestGetProductInfo:
-    @patch("product_listings_manager.products.Products.get_product_info")
-    def test_getProductInfo(self, mock_get_product_info):
-        label = "Fake-label"
-        getProductInfo(label)
-        mock_get_product_info.assert_called_once_with(label)
-
-
 class TestGetProductListings:
     @patch("product_listings_manager.products.get_koji_session")
-    def test_rpms_not_found(self, mock_get_koji_session):
+    def test_rpms_not_found(self, mock_get_koji_session, db):
         mock_get_koji_session.return_value.listRPMs.return_value = []
         build = "fake-build-1.0-1.el6"
         with pytest.raises(ProductListingsNotFoundError) as excinfo:
-            getProductListings("fake-label", build)
+            get_product_listings(db, "fake-label", build)
         assert f"Could not find any RPMs for build: {build}" == str(
             excinfo.value
         )
@@ -203,27 +191,26 @@ class TestGetProductListings:
 
 class TestGetModuleProductListings:
     @patch("product_listings_manager.products.get_build")
-    def test_not_module_build(self, mock_get_build):
+    def test_not_module_build(self, mock_get_build, db):
         mock_get_build.return_value = {"name": "perl"}
         nvr = "perl-5.16.3-1.el7"
         with pytest.raises(ProductListingsNotFoundError) as excinfo:
-            getModuleProductListings("fake-label", nvr)
+            get_module_product_listings(db, "fake-label", nvr)
         assert f"It's not a module build: {nvr}" == str(excinfo.value)
 
-    @patch("product_listings_manager.products.Products.get_module_overrides")
-    @patch("product_listings_manager.products.Products.get_product_info")
-    @patch("product_listings_manager.products.Products.precalc_treelist")
+    @patch("product_listings_manager.products.get_module_overrides")
+    @patch("product_listings_manager.products.get_product_info")
+    @patch("product_listings_manager.products.precalc_treelist")
     @patch("product_listings_manager.products.get_build")
-    @patch("product_listings_manager.products.models.Trees")
-    def test_getModuleProductListings(
+    def test_get_module_product_listings(
         self,
-        mock_trees_model,
         mock_get_build,
         mock_precalc_treelist,
         mock_get_product_info,
         mock_get_module_overrides,
+        db,
     ):
-        mock_with_entities = mock_trees_model.query.with_entities.return_value
+        mock_with_entities = db.query(TreesModel).with_entities.return_value
         mock_with_entities.join.return_value.filter.return_value.filter.return_value = [
             ("x86_64",),
         ]
@@ -232,19 +219,12 @@ class TestGetModuleProductListings:
 
         # test without overrides
         mock_get_module_overrides.return_value = []
-        assert getModuleProductListings("fake-label", nvr) == {
+        assert get_module_product_listings(db, "fake-label", nvr) == {
             "AppStream-8.0": ["x86_64"]
         }
 
         # test with overrides
         mock_get_module_overrides.return_value = ["ppc64le"]
-        assert getModuleProductListings("fake-label", nvr) == {
+        assert get_module_product_listings(db, "fake-label", nvr) == {
             "AppStream-8.0": ["ppc64le", "x86_64"]
         }
-
-
-class TestProductLabels:
-    @patch("product_listings_manager.products.Products.get_product_labels")
-    def test_getProductLabels(self, mock_get_product_labels):
-        getProductLabels()
-        mock_get_product_labels.assert_called_once_with()

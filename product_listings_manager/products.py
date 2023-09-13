@@ -11,6 +11,15 @@ from product_listings_manager import models
 
 logger = logging.getLogger(__name__)
 
+ALL_RELEASE_TYPES = (
+    re.compile(r"^TEST\d*", re.I),
+    re.compile(r"^ALPHA\d*", re.I),
+    re.compile(r"^BETA\d*", re.I),
+    re.compile(r"^RC\d*", re.I),
+    re.compile(r"^GOLD", re.I),
+    re.compile(r"^U\d+(-beta)?$", re.I),
+)
+
 
 def get_koji_session():
     """
@@ -47,231 +56,206 @@ def _cmp(a, b):
     return (a > b) - (a < b)
 
 
-class Products:
-    """
-    Class to hold methods related to product information.
-    """
+def score(release):
+    for i, regex in enumerate(ALL_RELEASE_TYPES):
+        if regex.search(release):
+            return i
+    return -1
 
-    all_release_types = [
-        re.compile(r"^TEST\d*", re.I),
-        re.compile(r"^ALPHA\d*", re.I),
-        re.compile(r"^BETA\d*", re.I),
-        re.compile(r"^RC\d*", re.I),
-        re.compile(r"^GOLD", re.I),
-        re.compile(r"^U\d+(-beta)?$", re.I),
-    ]
 
-    @staticmethod
-    def score(release):
-        map = Products.all_release_types
-        i = len(map) - 1
-        while i >= 0:
-            if map[i].search(release):
-                return i
-            i = i - 1
-        return i
+def my_sort(x, y):
+    if len(x) > len(y) and y == x[: len(y)]:
+        return -1
+    if len(y) > len(x) and x == y[: len(x)]:
+        return 1
+    x_score = score(x)
+    y_score = score(y)
+    if x_score == y_score:
+        return _cmp(x, y)
+    return _cmp(x_score, y_score)
 
-    @staticmethod
-    def my_sort(x, y):
-        if len(x) > len(y) and y == x[: len(y)]:
-            return -1
-        if len(y) > len(x) and x == y[: len(x)]:
-            return 1
-        x_score = Products.score(x)
-        y_score = Products.score(y)
-        if x_score == y_score:
-            return _cmp(x, y)
-        else:
-            return _cmp(x_score, y_score)
 
-    @staticmethod
-    def get_product_info(label):
-        """Get the latest version of product and it's variants."""
-        products = models.Products.query.filter_by(label=label).all()
-        versions = [x.version for x in products]
-        # Use functools.cmp_to_key for python3
-        # https://docs.python.org/3/library/functools.html#functools.cmp_to_key
-        versions.sort(key=functools.cmp_to_key(Products.my_sort))
-        versions.reverse()
+def get_product_info(db, label):
+    """Get the latest version of product and it's variants."""
+    products = db.query(models.Products).filter_by(label=label).all()
+    versions = [x.version for x in products]
+    # Use functools.cmp_to_key for python3
+    # https://docs.python.org/3/library/functools.html#functools.cmp_to_key
+    versions.sort(key=functools.cmp_to_key(my_sort))
+    versions.reverse()
 
-        if not versions:
-            raise ProductListingsNotFoundError(
-                "Could not find a product with label: %s" % label
-            )
-
-        return (
-            versions[0],
-            [x.variant for x in products if x.version == versions[0]],
+    if not versions:
+        raise ProductListingsNotFoundError(
+            "Could not find a product with label: %s" % label
         )
 
-    @staticmethod
-    def get_overrides(product, version, variant=None):
-        """
-        Returns the list of package overrides for the particular product specified.
-        """
+    return (
+        versions[0],
+        [x.variant for x in products if x.version == versions[0]],
+    )
 
-        query = models.Overrides.query.join(
-            models.Overrides.productref
-        ).filter(
+
+def get_overrides(db, product, version, variant=None):
+    """
+    Returns the list of package overrides for the particular product specified.
+    """
+
+    query = (
+        db.query(models.Overrides)
+        .join(models.Overrides.productref)
+        .filter(
             models.Products.label == product,
             models.Products.version == version,
         )
-        if variant:
-            query = query.filter(models.Products.variant == variant)
+    )
+    if variant:
+        query = query.filter(models.Products.variant == variant)
 
-        overrides = {}
-        for row in query.all():
-            name, pkg_arch, product_arch, include = (
-                row.name,
-                row.pkg_arch,
-                row.product_arch,
-                row.include,
-            )
-            overrides.setdefault(name, {}).setdefault(pkg_arch, {}).setdefault(
-                product_arch, include
-            )
-        return overrides
-
-    @staticmethod
-    def get_match_versions(product):
-        """
-        Returns the list of packages for this product where we must match the version.
-        """
-        return [
-            m.name
-            for m in models.MatchVersions.query.filter_by(
-                product=product
-            ).all()
-        ]
-
-    @staticmethod
-    def get_srconly_flag(product, version):
-        """
-        BREW-260 - Returns allow_source_only field for the product and matching version.
-        """
-        q = models.Products.query.filter_by(
-            label=product, version=version, allow_source_only=True
+    overrides = {}
+    for row in query.all():
+        name, pkg_arch, product_arch, include = (
+            row.name,
+            row.pkg_arch,
+            row.product_arch,
+            row.include,
         )
-        return models.db.session.query(q.exists()).scalar()
-
-    @staticmethod
-    def precalc_treelist(product, version, variant=None):
-        """Returns the list of trees to consider.
-
-        Looks in the compose db for a list of trees (one per arch) that are the most
-        recent for the particular product specified."""
-
-        query = (
-            models.Trees.query.join(models.Trees.products)
-            .order_by(models.Trees.date.desc(), models.Trees.id.desc())
-            .filter(
-                models.Products.label == product,
-                models.Products.version == version,
-            )
+        overrides.setdefault(name, {}).setdefault(pkg_arch, {}).setdefault(
+            product_arch, include
         )
-        if variant:
-            query = query.filter(models.Products.variant == variant)
+    return overrides
 
-        trees = {}
-        compat_trees = {}
-        for row in query.all():
-            id = row.id
-            arch = row.arch
-            if row.compatlayer:
-                if arch not in compat_trees:
-                    compat_trees[arch] = id
-            else:
-                if arch not in trees:
-                    trees[arch] = id
-        return list(trees.values()) + list(compat_trees.values())
 
-    @staticmethod
-    def dest_get_archs(
-        trees, src_arch, names, cache_entry, version=None, overrides=None
-    ):
-        """Return a list of arches that this package/arch combination ships on."""
+def get_match_versions(db, product):
+    """
+    Returns the list of packages for this product where we must match the version.
+    """
+    return [
+        m.name
+        for m in db.query(models.MatchVersions)
+        .filter_by(product=product)
+        .all()
+    ]
 
-        if trees is None:
-            return {name: src_arch for name in names}
 
-        query = (
-            models.Trees.query.with_entities(
-                models.Trees.arch, models.Packages.name
-            )
-            .join(models.Trees.packages)
-            .filter(
-                models.Packages.arch == src_arch,
-                models.Packages.name.in_(names),
-                models.Trees.id.in_(trees),
-                models.Trees.imported == 1,
-            )
+def get_srconly_flag(db, product, version):
+    """
+    BREW-260 - Returns allow_source_only field for the product and matching version.
+    """
+    q = db.query(models.Products).filter_by(
+        label=product, version=version, allow_source_only=True
+    )
+    return db.query(q.exists()).scalar()
+
+
+def precalc_treelist(db, product, version, variant=None):
+    """Returns the list of trees to consider.
+
+    Looks in the compose db for a list of trees (one per arch) that are the most
+    recent for the particular product specified."""
+
+    query = (
+        db.query(models.Trees)
+        .join(models.Trees.products)
+        .order_by(models.Trees.date.desc(), models.Trees.id.desc())
+        .filter(
+            models.Products.label == product,
+            models.Products.version == version,
         )
-        if version:
-            query = query.filter(models.Packages.version == version)
+    )
+    if variant:
+        query = query.filter(models.Products.variant == variant)
 
-        ret = {}
-        for arow in query.all():
-            ret.setdefault(arow.name, {}).setdefault(arow.arch, 1)
+    trees = {}
+    compat_trees = {}
+    for row in query.all():
+        id = row.id
+        arch = row.arch
+        if row.compatlayer:
+            if arch not in compat_trees:
+                compat_trees[arch] = id
+        else:
+            if arch not in trees:
+                trees[arch] = id
+    return list(trees.values()) + list(compat_trees.values())
 
-        for name in names:
-            # use cached map entry if there are no records from treetables
-            if koji.is_debuginfo(name) and not ret.get(name, {}):
-                ret[name] = copy.deepcopy(cache_entry)
 
-            if (
-                overrides
-                and name in overrides
-                and src_arch in overrides[name]
-                and not version
-            ):
-                for tree_arch, include in overrides[name][src_arch].items():
-                    if include:
-                        ret.setdefault(name, {}).setdefault(tree_arch, 1)
-                    elif name in ret and tree_arch in ret[name]:
-                        del ret[name][tree_arch]
-        return ret
+def dest_get_archs(
+    db, trees, src_arch, names, cache_entry, version=None, overrides=None
+):
+    """Return a list of arches that this package/arch combination ships on."""
 
-    @staticmethod
-    def get_module_overrides(
-        product, version, module_name, module_stream, variant=None
-    ):
-        """Returns the list of module overrides for the particular product specified."""
+    if trees is None:
+        return {name: src_arch for name in names}
 
-        query = models.ModuleOverrides.query.join(
-            models.ModuleOverrides.productref
-        ).filter(
+    query = (
+        db.query(models.Trees)
+        .with_entities(models.Trees.arch, models.Packages.name)
+        .join(models.Trees.packages)
+        .filter(
+            models.Packages.arch == src_arch,
+            models.Packages.name.in_(names),
+            models.Trees.id.in_(trees),
+            models.Trees.imported == 1,
+        )
+    )
+    if version:
+        query = query.filter(models.Packages.version == version)
+
+    ret = {}
+    for arow in query.all():
+        ret.setdefault(arow.name, {}).setdefault(arow.arch, 1)
+
+    for name in names:
+        # use cached map entry if there are no records from treetables
+        if koji.is_debuginfo(name) and not ret.get(name, {}):
+            ret[name] = copy.deepcopy(cache_entry)
+
+        if (
+            overrides
+            and name in overrides
+            and src_arch in overrides[name]
+            and not version
+        ):
+            for tree_arch, include in overrides[name][src_arch].items():
+                if include:
+                    ret.setdefault(name, {}).setdefault(tree_arch, 1)
+                elif name in ret and tree_arch in ret[name]:
+                    del ret[name][tree_arch]
+    return ret
+
+
+def get_module_overrides(
+    db, product, version, module_name, module_stream, variant=None
+):
+    """Returns the list of module overrides for the particular product specified."""
+
+    query = (
+        db.query(models.ModuleOverrides)
+        .join(models.ModuleOverrides.productref)
+        .filter(
             models.Products.label == product,
             models.Products.version == version,
             models.ModuleOverrides.name == module_name,
             models.ModuleOverrides.stream == module_stream,
         )
-        if variant:
-            query = query.filter(models.Products.variant == variant)
+    )
+    if variant:
+        query = query.filter(models.Products.variant == variant)
 
-        return [row.product_arch for row in query.all()]
-
-    @staticmethod
-    def get_product_labels():
-        rows = (
-            models.Products.query.with_entities(models.Products.label)
-            .distinct()
-            .all()
-        )
-        return [{"label": row.label} for row in rows]
+    return [row.product_arch for row in query.all()]
 
 
-def getProductInfo(label):
-    """
-    Get a list of the versions and variants of a product with the given label.
-    """
-    return Products.get_product_info(label)
+def get_product_labels(db):
+    rows = (
+        db.query(models.Products)
+        .with_entities(models.Products.label)
+        .distinct()
+        .all()
+    )
+    return [{"label": row.label} for row in rows]
 
 
-def getProductLabels():
-    return Products.get_product_labels()
-
-
-def getProductListings(productLabel, buildInfo):
+def get_product_listings(db, productLabel, buildInfo):
     """
     Get a map of which variants of the given product included packages built
     by the given build, and which arches each variant included.
@@ -294,19 +278,19 @@ def getProductListings(productLabel, buildInfo):
     )
     srpm = "%(package_name)s-%(version)s-%(release)s.src.rpm" % build
 
-    prodinfo = Products.get_product_info(productLabel)
+    prodinfo = get_product_info(db, productLabel)
     version, variants = prodinfo
 
     listings = {}
-    match_version = Products.get_match_versions(productLabel)
+    match_version = get_match_versions(db, productLabel)
     for variant in variants:
         if variant is None:
             # dict keys must be a string
             variant = ""
-        treelist = Products.precalc_treelist(productLabel, version, variant)
+        treelist = precalc_treelist(db, productLabel, version, variant)
         if not treelist:
             continue
-        overrides = Products.get_overrides(productLabel, version, variant)
+        overrides = get_overrides(db, productLabel, version, variant)
         cache_map = {}
         for rpm in rpms:
             if rpm["name"] in match_version:
@@ -321,7 +305,8 @@ def getProductListings(productLabel, buildInfo):
         d = {}
         all_archs = {rpm["arch"] for rpm in rpms_nondebug}
         for arch in all_archs:
-            d[arch] = Products.dest_get_archs(
+            d[arch] = dest_get_archs(
+                db,
                 treelist,
                 arch,
                 [rpm["name"] for rpm in rpms_nondebug if rpm["arch"] == arch],
@@ -347,7 +332,8 @@ def getProductListings(productLabel, buildInfo):
         d = {}
         all_archs = {rpm["arch"] for rpm in rpms_debug}
         for arch in all_archs:
-            d[arch] = Products.dest_get_archs(
+            d[arch] = dest_get_archs(
+                db,
                 treelist,
                 arch,
                 [rpm["name"] for rpm in rpms_debug if rpm["arch"] == arch],
@@ -371,7 +357,7 @@ def getProductListings(productLabel, buildInfo):
         for variant in list(listings.keys()):
             nvrs = list(listings[variant].keys())
             # BREW-260: Read allow_src_only flag for the product/version
-            allow_src_only = Products.get_srconly_flag(productLabel, version)
+            allow_src_only = get_srconly_flag(db, productLabel, version)
             if len(nvrs) == 1:
                 maps = list(listings[variant][nvrs[0]].keys())
                 # BREW-260: check for allow_src_only flag added
@@ -380,7 +366,7 @@ def getProductListings(productLabel, buildInfo):
     return listings
 
 
-def getModuleProductListings(productLabel, moduleNVR):
+def get_module_product_listings(db, productLabel, moduleNVR):
     """
     Get a map of which variants of the given product included the given module,
     and which arches each variant included.
@@ -395,7 +381,7 @@ def getModuleProductListings(productLabel, moduleNVR):
             "It's not a module build: %s" % moduleNVR
         )
 
-    prodinfo = Products.get_product_info(productLabel)
+    prodinfo = get_product_info(db, productLabel)
     version, variants = prodinfo
 
     listings = {}
@@ -403,10 +389,11 @@ def getModuleProductListings(productLabel, moduleNVR):
         if variant is None:
             # dict keys must be a string
             variant = ""
-        trees = Products.precalc_treelist(productLabel, version, variant)
+        trees = precalc_treelist(db, productLabel, version, variant)
 
         module_trees = (
-            models.Trees.query.with_entities(models.Trees.arch)
+            db.query(models.Trees)
+            .with_entities(models.Trees.arch)
             .join(models.Trees.modules)
             .filter(
                 models.Modules.name == module_name,
@@ -415,8 +402,8 @@ def getModuleProductListings(productLabel, moduleNVR):
             .filter(models.Trees.id.in_(trees))
         )
 
-        overrides = Products.get_module_overrides(
-            productLabel, version, module_name, module_stream, variant
+        overrides = get_module_overrides(
+            db, productLabel, version, module_name, module_stream, variant
         )
 
         archs = sorted(set([arch for arch, in module_trees] + overrides))

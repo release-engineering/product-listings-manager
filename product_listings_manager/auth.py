@@ -1,10 +1,12 @@
 # SPDX-License-Identifier: GPL-2.0+
 import base64
 import binascii
+import logging
 
 import gssapi
-from flask import Response, current_app
-from werkzeug.exceptions import Forbidden, Unauthorized
+from fastapi import HTTPException
+
+logger = logging.getLogger(__name__)
 
 
 # Inspired by https://github.com/mkomitee/flask-kerberos/blob/master/flask_kerberos.py
@@ -21,23 +23,23 @@ def process_gssapi_request(token):
         # The current architecture cannot support continuation here
         stage = "checking completion"
         if not sc.complete:
-            current_app.logger.error(
-                "Multiple GSSAPI round trips not supported"
+            logger.error("Multiple GSSAPI round trips not supported")
+            raise HTTPException(
+                status_code=403, detail="Attempted multiple GSSAPI round trips"
             )
-            raise Forbidden("Attempted multiple GSSAPI round trips")
 
-        current_app.logger.debug("Completed GSSAPI negotiation")
+        logger.debug("Completed GSSAPI negotiation")
 
         stage = "getting remote user"
         user = str(sc.initiator_name)
         return user, token
     except gssapi.exceptions.GSSError as e:
-        current_app.logger.exception(
+        logger.exception(
             "Unable to authenticate: failed to %s: %s",
             stage,
             e.gen_message(),
         )
-        raise Forbidden("Authentication failed")
+        raise HTTPException(status_code=403, detail="Authentication failed")
 
 
 def get_user(request):
@@ -46,28 +48,32 @@ def get_user(request):
 
 def get_user_by_method(request, auth_method):
     if "Authorization" not in request.headers:
-        response = Response(
-            "Unauthorized", 401, {"WWW-Authenticate": "Negotiate"}
+        raise HTTPException(
+            status_code=401, headers={"WWW-Authenticate": "Negotiate"}
         )
-        raise Unauthorized(response=response)
 
     header = request.headers.get("Authorization")
     scheme, *rest = header.strip().split(maxsplit=1)
 
     if scheme != "Negotiate":
-        raise Unauthorized(
-            "Unsupported authentication scheme; supported is Negotiate"
+        raise HTTPException(
+            status_code=401,
+            detail="Unsupported authentication scheme; supported is Negotiate",
         )
 
     if not rest or not rest[0]:
-        raise Unauthorized("Missing authentication token")
+        raise HTTPException(
+            status_code=401, detail="Missing authentication token"
+        )
 
     token = rest[0]
 
     try:
         user, token = process_gssapi_request(base64.b64decode(token))
     except binascii.Error:
-        raise Unauthorized("Invalid authentication token")
+        raise HTTPException(
+            status_code=401, detail="Invalid authentication token"
+        )
 
     token = base64.b64encode(token).decode("utf-8")
     headers = {"WWW-Authenticate": f"Negotiate {token}"}

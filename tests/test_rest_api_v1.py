@@ -1,11 +1,12 @@
 # SPDX-License-Identifier: GPL-2.0+
-from unittest.mock import ANY, patch
+from unittest.mock import ANY, Mock, patch
 
 import koji
 from pytest import fixture
 from sqlalchemy.exc import SQLAlchemyError
 
 from product_listings_manager import products
+from product_listings_manager.models import get_db
 
 from .factories import (
     ModulesFactory,
@@ -16,8 +17,10 @@ from .factories import (
 
 
 @fixture
-def error_log(app):
-    with patch.object(app.logger, "error", autospec=True) as mocked:
+def exception_log(app):
+    with patch(
+        "product_listings_manager.utils.logger.exception", autospec=True
+    ) as mocked:
         yield mocked
 
 
@@ -36,15 +39,15 @@ class TestIndex:
     def test_get_index(self, client):
         r = client.get("/api/v1.0/")
         expected_json = {
-            "about_url": "http://localhost/api/v1.0/about",
-            "health_url": "http://localhost/api/v1.0/health",
-            "module_product_listings_url": "http://localhost/api/v1.0/module-product-listings/:label/:module_build_nvr",
-            "product_info_url": "http://localhost/api/v1.0/product-info/:label",
-            "product_listings_url": "http://localhost/api/v1.0/product-listings/:label/:build_info",
-            "product_labels_url": "http://localhost/api/v1.0/product-labels",
+            "about_url": "http://testserver/api/v1.0/about",
+            "health_url": "http://testserver/api/v1.0/health",
+            "module_product_listings_url": "http://testserver/api/v1.0/module-product-listings/:label/:module_build_nvr",
+            "product_info_url": "http://testserver/api/v1.0/product-info/:label",
+            "product_listings_url": "http://testserver/api/v1.0/product-listings/:label/:build_info",
+            "product_labels_url": "http://testserver/api/v1.0/product-labels",
         }
         assert r.status_code == 200
-        assert r.get_json() == expected_json
+        assert r.json() == expected_json
 
 
 class TestAbout:
@@ -53,37 +56,37 @@ class TestAbout:
 
         r = client.get("/api/v1.0/about")
         assert r.status_code == 200
-        assert r.get_json() == {
+        assert r.json() == {
             "source": "https://github.com/release-engineering/product-listings-manager",
             "version": __version__,
         }
 
 
 class TestHealth:
-    @patch("product_listings_manager.rest_api_v1.db.session.execute")
-    def test_health_db_fail(self, mock_db, client):
-        mock_db.side_effect = SQLAlchemyError("db connect error")
+    def test_health_db_fail(self, client, app):
+        async def mock_get_db():
+            mocked = Mock()
+            mocked().execute.side_effect = SQLAlchemyError("db connect error")
+            return mocked()
+
+        app.dependency_overrides[get_db] = mock_get_db
         r = client.get("/api/v1.0/health")
-        assert r.status_code == 503
-        data = r.get_json()
-        assert data["ok"] is False
-        assert "DB Error:" in data["message"]
+        assert r.status_code == 503, r.text
+        assert "DB Error:" in r.json().get("message", "")
 
     @patch("product_listings_manager.rest_api_v1.products.get_koji_session")
     def test_health_koji_fail(self, mock_koji, client):
         mock_koji.side_effect = Exception("koji connect error")
         r = client.get("/api/v1.0/health")
-        assert r.status_code == 503
-        data = r.get_json()
-        assert data["ok"] is False
-        assert "Koji Error: koji connect error" in data["message"]
+        assert r.status_code == 503, r.text
+        assert "Koji Error: koji connect error" in r.json().get("message")
 
     @patch("product_listings_manager.rest_api_v1.products.get_koji_session")
     def test_health_ok(self, mock_koji, client):
         mock_koji.return_value.getAPIVersion.return_value = 1
         r = client.get("/api/v1.0/health")
-        assert r.status_code == 200
-        assert r.get_json() == {"ok": True, "message": "It works!"}
+        assert r.status_code == 200, r.text
+        assert r.json() == {"message": "It works!"}
 
 
 class TestProductInfo:
@@ -100,26 +103,25 @@ class TestProductInfo:
         )
         r = client.get(self.path)
         assert r.status_code == 200
-        assert r.get_json() == [product_version, [p1.variant, p2.variant]]
+        assert r.json() == [product_version, [p1.variant, p2.variant]]
 
     def test_label_not_found(self, client):
         msg = "Could not find a product with label: %s" % self.product_label
         r = client.get(self.path)
         assert r.status_code == 404
-        assert msg in r.get_json()["message"]
+        assert msg in r.json().get("message", "")
 
-    @patch("product_listings_manager.products.getProductInfo")
-    def test_unknown_error(self, mock_getinfo, error_log, client):
+    @patch("product_listings_manager.products.get_product_info")
+    def test_unknown_error(self, mock_getinfo, exception_log, client):
         mock_getinfo.side_effect = Exception("Unexpected error")
         r = client.get(self.path)
         assert r.status_code == 500
-        error_log.assert_any_call(
-            "%s: callee=%r, args=%r, kwargs=%r, %s",
-            "API call getProductInfo() failed",
+        exception_log.assert_any_call(
+            "%s: callee=%r, args=%r, kwargs=%r",
+            "API call get_product_info() failed",
             ANY,
             (self.product_label,),
             {},
-            None,
         )
 
 
@@ -173,17 +175,18 @@ class TestProductListings:
         )
         t.packages.append(pkg)
         t.packages.append(pkg_src)
+        TreesFactory._meta.sqlalchemy_session.commit()
 
         r = client.get(self.path)
         assert r.status_code == 200
-        assert r.get_json() == {
+        assert r.json() == {
             variant: {
                 self.nvr: {"x86_64": ["x86_64"], "src": ["x86_64"]},
                 debuginfo_nvr: {"x86_64": ["x86_64"]},
             }
         }
 
-    @patch("product_listings_manager.products.getProductListings")
+    @patch("product_listings_manager.products.get_product_listings")
     def test_product_listings_not_found(
         self, mock_get_product_listings, client
     ):
@@ -193,20 +196,19 @@ class TestProductListings:
         )
         r = client.get(self.path)
         assert r.status_code == 404
-        assert r.get_json() == {"message": error_message}
+        assert r.json() == {"message": error_message}
 
-    @patch("product_listings_manager.products.getProductListings")
-    def test_unknown_error(self, mock_getlistings, error_log, client):
+    @patch("product_listings_manager.products.get_product_listings")
+    def test_unknown_error(self, mock_getlistings, exception_log, client):
         mock_getlistings.side_effect = Exception("Unexpected error")
         r = client.get(self.path)
         assert r.status_code == 500
-        error_log.assert_any_call(
-            "%s: callee=%r, args=%r, kwargs=%r, %s",
-            "API call getProductListings() failed",
+        exception_log.assert_any_call(
+            "%s: callee=%r, args=%r, kwargs=%r",
+            "API call get_product_listings() failed",
             ANY,
             (self.product_label, self.nvr),
             {},
-            None,
         )
 
     def test_get_product_listings_src_only(self, mock_koji_session, client):
@@ -233,18 +235,20 @@ class TestProductListings:
             name=self.pkg_name, version=self.pkg_version, arch="src"
         )
         t.packages.append(pkg_src)
+        TreesFactory._meta.sqlalchemy_session.commit()
 
         # Should return empty product listings because only src package found
         # but allow_source_only=False
         r = client.get(self.path)
         assert r.status_code == 200
-        assert r.get_json() == {}
+        assert r.json() == {}
 
         # Set allow_source_only to True and then it should return non-empty listings
         p.allow_source_only = True
+        TreesFactory._meta.sqlalchemy_session.commit()
         r = client.get(self.path)
         assert r.status_code == 200
-        assert r.get_json() == {variant: {self.nvr: {"src": ["x86_64"]}}}
+        assert r.json() == {variant: {self.nvr: {"src": ["x86_64"]}}}
 
     def test_get_product_listings_missing_build(
         self, mock_koji_session, client
@@ -253,7 +257,7 @@ class TestProductListings:
         mock_koji_session.getBuild.side_effect = koji.GenericError(error)
         r = client.get(self.path)
         assert r.status_code == 404
-        assert r.get_json() == {"message": error}
+        assert r.json() == {"message": error}
 
 
 class TestModuleProductListings:
@@ -282,12 +286,13 @@ class TestModuleProductListings:
         t = TreesFactory()
         t.products.append(p)
         t.modules.append(m)
+        TreesFactory._meta.sqlalchemy_session.commit()
 
         r = client.get(self.path)
         assert r.status_code == 200
-        assert r.get_json() == {variant: [t.arch]}
+        assert r.json() == {variant: [t.arch]}
 
-    @patch("product_listings_manager.products.getModuleProductListings")
+    @patch("product_listings_manager.products.get_module_product_listings")
     def test_product_listings_not_found(
         self, mock_get_module_product_listings, client
     ):
@@ -297,36 +302,34 @@ class TestModuleProductListings:
         )
         r = client.get(self.path)
         assert r.status_code == 404
-        assert error_message in r.get_json().get("message", "")
+        assert error_message in r.json().get("message", "")
 
-    @patch("product_listings_manager.products.getModuleProductListings")
-    def test_unknown_error(self, mock_getlistings, error_log, client):
+    @patch("product_listings_manager.products.get_module_product_listings")
+    def test_unknown_error(self, mock_getlistings, exception_log, client):
         mock_getlistings.side_effect = Exception("Unexpected error")
         r = client.get(self.path)
         assert r.status_code == 500
-        error_log.assert_any_call(
-            "%s: callee=%r, args=%r, kwargs=%r, %s",
-            "API call getModuleProductListings() failed",
+        exception_log.assert_any_call(
+            "%s: callee=%r, args=%r, kwargs=%r",
+            "API call get_module_product_listings() failed",
             ANY,
             (self.product_label, self.nvr),
             {},
-            None,
         )
 
 
 class TestLabels:
-    @patch("product_listings_manager.products.getProductLabels")
-    def test_unknown_error(self, mock_getlabels, error_log, client):
+    @patch("product_listings_manager.products.get_product_labels")
+    def test_unknown_error(self, mock_getlabels, exception_log, client):
         mock_getlabels.side_effect = Exception("Unexpected error")
         r = client.get("/api/v1.0/product-labels")
         assert r.status_code == 500
-        error_log.assert_any_call(
-            "%s: callee=%r, args=%r, kwargs=%r, %s",
-            "API call getProductLabels() failed",
+        exception_log.assert_any_call(
+            "%s: callee=%r, args=%r, kwargs=%r",
+            "API call get_product_labels() failed",
             ANY,
             tuple(),
             {},
-            None,
         )
 
     def test_get_product_lables(self, client):
@@ -334,4 +337,4 @@ class TestLabels:
         p2 = ProductsFactory()
         r = client.get("/api/v1.0/product-labels")
         assert r.status_code == 200
-        assert r.get_json() == [{"label": p1.label}, {"label": p2.label}]
+        assert r.json() == [{"label": p1.label}, {"label": p2.label}]
