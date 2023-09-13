@@ -1,5 +1,8 @@
-from unittest.mock import patch
+# SPDX-License-Identifier: GPL-2.0+
+from unittest.mock import ANY, patch
 
+import koji
+from pytest import fixture
 from sqlalchemy.exc import SQLAlchemyError
 
 from product_listings_manager import products
@@ -10,6 +13,23 @@ from .factories import (
     ProductsFactory,
     TreesFactory,
 )
+
+
+@fixture
+def error_log(app):
+    with patch.object(app.logger, "error", autospec=True) as mocked:
+        yield mocked
+
+
+@fixture
+def mock_koji_session():
+    with patch(
+        "product_listings_manager.products.koji.ClientSession"
+    ) as mocked:
+        with patch(
+            "product_listings_manager.products.koji.read_config", autospec=True
+        ):
+            yield mocked()
 
 
 class TestIndex:
@@ -89,13 +109,17 @@ class TestProductInfo:
         assert msg in r.get_json()["message"]
 
     @patch("product_listings_manager.products.getProductInfo")
-    @patch("product_listings_manager.utils.log_remote_call_error")
-    def test_unknown_error(self, mock_log, mock_getinfo, client):
+    def test_unknown_error(self, mock_getinfo, error_log, client):
         mock_getinfo.side_effect = Exception("Unexpected error")
         r = client.get(self.path)
         assert r.status_code == 500
-        mock_log.assert_called_once_with(
-            "API call getProductInfo() failed", self.product_label
+        error_log.assert_any_call(
+            "%s: callee=%r, args=%r, kwargs=%r, %s",
+            "API call getProductInfo() failed",
+            ANY,
+            (self.product_label,),
+            {},
+            None,
         )
 
 
@@ -107,12 +131,8 @@ class TestProductListings:
     nvr = f"{pkg_name}-{pkg_version}-{pkg_release}"
     path = f"/api/v1.0/product-listings/{product_label}/{nvr}"
 
-    @patch("product_listings_manager.products.get_build")
-    @patch("product_listings_manager.products.get_koji_session")
-    def test_get_product_listings(
-        self, mock_koji_session, mock_get_build, client
-    ):
-        mock_get_build.return_value = {
+    def test_get_product_listings(self, mock_koji_session, client):
+        mock_koji_session.getBuild.return_value = {
             "id": 1,
             "package_name": self.pkg_name,
             "version": self.pkg_version,
@@ -124,7 +144,7 @@ class TestProductListings:
         debuginfo_nvr = "{}-{}-{}".format(
             debuginfo_pkg_name, self.pkg_version, self.pkg_release
         )
-        mock_koji_session.return_value.listRPMs.return_value = [
+        mock_koji_session.listRPMs.return_value = [
             {
                 "arch": "s390x",
                 "name": debuginfo_pkg_name,
@@ -176,23 +196,21 @@ class TestProductListings:
         assert r.get_json() == {"message": error_message}
 
     @patch("product_listings_manager.products.getProductListings")
-    @patch("product_listings_manager.utils.log_remote_call_error")
-    def test_unknown_error(self, mock_log, mock_getlistings, client):
+    def test_unknown_error(self, mock_getlistings, error_log, client):
         mock_getlistings.side_effect = Exception("Unexpected error")
         r = client.get(self.path)
         assert r.status_code == 500
-        mock_log.assert_called_once_with(
+        error_log.assert_any_call(
+            "%s: callee=%r, args=%r, kwargs=%r, %s",
             "API call getProductListings() failed",
-            self.product_label,
-            self.nvr,
+            ANY,
+            (self.product_label, self.nvr),
+            {},
+            None,
         )
 
-    @patch("product_listings_manager.products.get_build")
-    @patch("product_listings_manager.products.get_koji_session")
-    def test_get_product_listings_src_only(
-        self, mock_koji_session, mock_get_build, client
-    ):
-        mock_get_build.return_value = {
+    def test_get_product_listings_src_only(self, mock_koji_session, client):
+        mock_koji_session.getBuild.return_value = {
             "id": 1,
             "package_name": self.pkg_name,
             "version": self.pkg_version,
@@ -200,7 +218,7 @@ class TestProductListings:
         }
 
         # mock result of koji listRPMs() API
-        mock_koji_session.return_value.listRPMs.return_value = [
+        mock_koji_session.listRPMs.return_value = [
             {"arch": "src", "name": self.pkg_name, "nvr": self.nvr}
         ]
 
@@ -228,6 +246,15 @@ class TestProductListings:
         assert r.status_code == 200
         assert r.get_json() == {variant: {self.nvr: {"src": ["x86_64"]}}}
 
+    def test_get_product_listings_missing_build(
+        self, mock_koji_session, client
+    ):
+        error = f"No such build: '{self.nvr}'"
+        mock_koji_session.getBuild.side_effect = koji.GenericError(error)
+        r = client.get(self.path)
+        assert r.status_code == 404
+        assert r.get_json() == {"message": error}
+
 
 class TestModuleProductListings:
     product_label = "RHEL-8.0.0"
@@ -236,9 +263,8 @@ class TestModuleProductListings:
     nvr = f"{module_name}-{module_stream}-820181217154935.9edba152"
     path = f"/api/v1.0/module-product-listings/{product_label}/{nvr}"
 
-    @patch("product_listings_manager.products.get_build")
-    def test_get_module_product_listings(self, mock_get_build, client):
-        mock_get_build.return_value = {
+    def test_get_module_product_listings(self, mock_koji_session, client):
+        mock_koji_session.getBuild.return_value = {
             "extra": {
                 "typeinfo": {
                     "module": {
@@ -274,26 +300,34 @@ class TestModuleProductListings:
         assert error_message in r.get_json().get("message", "")
 
     @patch("product_listings_manager.products.getModuleProductListings")
-    @patch("product_listings_manager.utils.log_remote_call_error")
-    def test_unknown_error(self, mock_log, mock_getlistings, client):
+    def test_unknown_error(self, mock_getlistings, error_log, client):
         mock_getlistings.side_effect = Exception("Unexpected error")
         r = client.get(self.path)
         assert r.status_code == 500
-        mock_log.assert_called_once_with(
+        error_log.assert_any_call(
+            "%s: callee=%r, args=%r, kwargs=%r, %s",
             "API call getModuleProductListings() failed",
-            self.product_label,
-            self.nvr,
+            ANY,
+            (self.product_label, self.nvr),
+            {},
+            None,
         )
 
 
 class TestLabels:
     @patch("product_listings_manager.products.getProductLabels")
-    @patch("product_listings_manager.utils.log_remote_call_error")
-    def test_unknown_error(self, mock_log, mock_getlabels, client):
+    def test_unknown_error(self, mock_getlabels, error_log, client):
         mock_getlabels.side_effect = Exception("Unexpected error")
         r = client.get("/api/v1.0/product-labels")
         assert r.status_code == 500
-        mock_log.assert_called_once_with("API call getProductLabels() failed")
+        error_log.assert_any_call(
+            "%s: callee=%r, args=%r, kwargs=%r, %s",
+            "API call getProductLabels() failed",
+            ANY,
+            tuple(),
+            {},
+            None,
+        )
 
     def test_get_product_lables(self, client):
         p1 = ProductsFactory()

@@ -5,9 +5,6 @@ from typing import Any
 
 
 def read_json_file(filename: str):
-    if not filename:
-        return None
-
     with open(filename) as f:
         return json.load(f)
 
