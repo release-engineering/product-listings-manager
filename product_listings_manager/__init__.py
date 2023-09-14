@@ -6,12 +6,9 @@ try:
 except importlib_metadata.PackageNotFoundError:
     # If the app is not installed but run from git repository clone, get the
     # version from pyproject.toml.
-    try:
-        import tomllib
-    except ImportError:
-        import toml as tomllib
+    import tomllib
 
     with open("pyproject.toml") as f:
-        pyproject = tomllib.load(f)
+        pyproject = tomllib.load(f)  # type: ignore
 
     __version__ = pyproject["tool"]["poetry"]["version"]
