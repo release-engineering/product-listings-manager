@@ -74,6 +74,33 @@ class TestHealth:
         assert r.status_code == 503, r.text
         assert "DB Error:" in r.json().get("message", "")
 
+    def test_health_permissions_file_not_found(
+        self, client, monkeypatch, tmp_path
+    ):
+        permissions_file = tmp_path / "permissions_empty.json"
+        monkeypatch.setenv("PLM_PERMISSIONS", str(permissions_file))
+
+        r = client.get("/api/v1.0/health")
+        assert r.status_code == 503, r.text
+        assert "Failed to parse permissions configuration:" in r.json().get(
+            "message", ""
+        )
+
+    def test_health_permissions_file_invalid(
+        self, client, monkeypatch, tmp_path
+    ):
+        permissions_file = tmp_path / "permissions_bad.json"
+        with open(permissions_file, "w") as f:
+            f.write("[{}]")
+
+        monkeypatch.setenv("PLM_PERMISSIONS", str(permissions_file))
+
+        r = client.get("/api/v1.0/health")
+        assert r.status_code == 503, r.text
+        assert "Failed to parse permissions configuration:" in r.json().get(
+            "message", ""
+        )
+
     @patch("product_listings_manager.rest_api_v1.products.get_koji_session")
     def test_health_koji_fail(self, mock_koji, client):
         mock_koji.side_effect = Exception("koji connect error")

@@ -3,7 +3,6 @@ import json
 import logging
 import os
 from functools import lru_cache
-from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy import text
@@ -13,17 +12,21 @@ from sqlalchemy.orm import Session
 from product_listings_manager import __version__, products, utils
 from product_listings_manager.auth import get_user
 from product_listings_manager.authorization import LdapConfig, get_user_groups
-from product_listings_manager.db_queries import (
-    execute_queries,
-    queries_from_user_input,
-    validate_queries,
-)
+from product_listings_manager.db_queries import execute_queries
 from product_listings_manager.models import get_db
 from product_listings_manager.permissions import has_permission
+from product_listings_manager.schemas import (
+    LoginInfo,
+    Message,
+    Permission,
+    SqlQuery,
+)
 
 router = APIRouter(prefix="/api/v1.0")
 
 logger = logging.getLogger(__name__)
+
+HEALTH_OK_MESSAGE = "It works!"
 
 
 def ldap_config() -> LdapConfig:
@@ -40,7 +43,7 @@ def ldap_config() -> LdapConfig:
 
 
 @lru_cache
-def parse_permissions(filename) -> list[dict[str, Any]]:
+def parse_permissions(filename) -> list[Permission]:
     """
     Return PERMISSIONS configuration.
     """
@@ -48,7 +51,7 @@ def parse_permissions(filename) -> list[dict[str, Any]]:
         return []
 
     with open(filename) as f:
-        return json.load(f)
+        return [Permission.model_validate(x) for x in json.load(f)]
 
 
 @router.get("/")
@@ -86,13 +89,24 @@ def about():
     }
 
 
-@router.get("/health")
+@router.get(
+    "/health",
+    responses={
+        200: {"model": Message(message=HEALTH_OK_MESSAGE)},
+        503: {"model": Message},
+    },
+)
 def health(db: Session = Depends(get_db)):
-    """Provides status report
+    """Provides status report"""
 
-    * 200 if everything is ok
-    * 503 if service is not working as expected
-    """
+    try:
+        permissions()
+    except Exception as e:
+        logger.error("Failed to parse permissions configuration: %s", e)
+        raise HTTPException(
+            status_code=503,
+            detail=f"Failed to parse permissions configuration: {e}",
+        )
 
     try:
         db.execute(text("SELECT 1"))
@@ -106,19 +120,17 @@ def health(db: Session = Depends(get_db)):
         logger.warning("Koji health check failed: %s", e)
         raise HTTPException(status_code=503, detail=f"Koji Error: {e}")
 
-    return {"message": "It works!"}
+    return Message(message=HEALTH_OK_MESSAGE)
 
 
 @router.get("/login")
-def login(request: Request):
+def login(request: Request) -> LoginInfo:
+    """Shows credentials for the current user."""
     ldap_config_ = ldap_config()
     user, headers = get_user(request)
     groups = set(get_user_groups(user, ldap_config_))
 
-    return {
-        "user": user,
-        "groups": sorted(groups),
-    }
+    return LoginInfo(user=user, groups=sorted(groups))
 
 
 @router.get("/product-info/{label}")
@@ -191,23 +203,48 @@ def module_product_listings(
 
 
 @router.get("/permissions")
-def permissions():
+def permissions() -> list[Permission]:
+    """
+    Lists user and group permissions for using **dbquery** API.
+    """
     filename = os.getenv("PLM_PERMISSIONS")
     return parse_permissions(filename)
 
 
 @router.post("/dbquery")
-async def dbquery(request: Request, db: Session = Depends(get_db)):
-    input = request.json()
+async def dbquery(
+    query_or_queries: SqlQuery | list[SqlQuery | str] | str,
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    """
+    Executes given SQL queries with optionally provided parameters.
+
+    Multiple queries can be provided (pass as an array) but only the result
+    (listed rows) from the last query will be returned.
+
+    User must be logged in and have permission to execute the queries.
+    """
+    if not query_or_queries:
+        raise HTTPException(
+            status_code=422, detail="Queries must not be empty"
+        )
+
     ldap_config_ = ldap_config()
     user, headers = get_user(request)
-    queries = queries_from_user_input(await input)
-    validate_queries(queries)
 
-    filename = os.getenv("PLM_PERMISSIONS")
-    if not has_permission(
-        user, queries, parse_permissions(filename), ldap_config_
-    ):
+    # normalize queries type to list of SqlQuery
+    if isinstance(query_or_queries, SqlQuery):
+        queries = [query_or_queries]
+    elif isinstance(query_or_queries, str):
+        queries = [SqlQuery(query=query_or_queries)]
+    elif isinstance(query_or_queries, list):
+        queries = [
+            q if isinstance(q, SqlQuery) else SqlQuery(query=q)
+            for q in query_or_queries
+        ]
+
+    if not has_permission(user, queries, permissions(), ldap_config_):
         logger.warning("Unauthorized access for user %s", user)
         raise HTTPException(
             status_code=401,

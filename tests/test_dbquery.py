@@ -23,11 +23,7 @@ class TestDBQuery:
         r = auth_client.post(
             "/api/v1.0/dbquery", json=input, headers=auth_headers()
         )
-        assert r.status_code == 400, r.text
-        assert r.json() == {"message": ANY}
-        assert r.json()["message"].startswith(
-            "Parameter must have the following format"
-        )
+        assert r.status_code == 422, r.text
 
     def test_db_query_unauthorized(self, auth_client):
         query = "DELETE FROM products"
