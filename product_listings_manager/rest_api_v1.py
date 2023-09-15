@@ -3,6 +3,7 @@ import json
 import logging
 import os
 from functools import lru_cache
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy import text
@@ -56,7 +57,7 @@ def parse_permissions(filename) -> list[Permission]:
 
 @router.get("/")
 def api_index(request: Request):
-    """Link to the the v1 API endpoints."""
+    """Links to the v1 API endpoints."""
     return {
         "about_url": str(request.url_for("about")),
         "health_url": str(request.url_for("health")),
@@ -83,6 +84,7 @@ def api_index(request: Request):
 
 @router.get("/about")
 def about():
+    """Shows information about the application."""
     return {
         "source": "https://github.com/release-engineering/product-listings-manager",
         "version": __version__,
@@ -97,7 +99,7 @@ def about():
     },
 )
 def health(db: Session = Depends(get_db)):
-    """Provides status report"""
+    """Provides status report."""
 
     try:
         permissions()
@@ -129,9 +131,9 @@ def health(db: Session = Depends(get_db)):
     return Message(message=HEALTH_OK_MESSAGE)
 
 
-@router.get("/login")
+@router.get("/login", responses={401: {}})
 def login(request: Request) -> LoginInfo:
-    """Shows credentials for the current user."""
+    """Shows the current user and assigned groups."""
     ldap_config_ = ldap_config()
     user, headers = get_user(request)
     groups = set(get_user_groups(user, ldap_config_))
@@ -139,8 +141,29 @@ def login(request: Request) -> LoginInfo:
     return LoginInfo(user=user, groups=sorted(groups))
 
 
-@router.get("/product-info/{label}")
-def product_info(label: str, request: Request, db: Session = Depends(get_db)):
+@router.get(
+    "/product-info/{label}",
+    responses={
+        200: {
+            "content": {
+                "application/json": {
+                    "example": [
+                        "8.2.0",
+                        [
+                            "Supplementary-8.2.0.GA",
+                            "AppStream-8.2.0.GA",
+                            "BaseOS-8.2.0.GA",
+                        ],
+                    ]
+                }
+            },
+        },
+    },
+)
+def product_info(
+    label: str, request: Request, db: Session = Depends(get_db)
+) -> tuple[str, list[str]]:
+    """Get the latest version of a product and its variants."""
     try:
         versions, variants = products.get_product_info(db, label)
     except products.ProductListingsNotFoundError as ex:
@@ -154,11 +177,27 @@ def product_info(label: str, request: Request, db: Session = Depends(get_db)):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(ex)
         )
-    return [versions, variants]
+    return (versions, variants)
 
 
-@router.get("/product-labels")
+@router.get(
+    "/product-labels",
+    responses={
+        200: {
+            "content": {
+                "application/json": {
+                    "example": [
+                        {"label": "RHEL-8.2.1.MAIN"},
+                        {"label": "RHEL-8.2.0.GA"},
+                        {"label": "RHEL-8.2.0"},
+                    ]
+                }
+            },
+        },
+    },
+)
 def product_labels(request: Request, db: Session = Depends(get_db)):
+    """List all product labels."""
     try:
         return products.get_product_labels(db)
     except Exception as ex:
@@ -170,13 +209,49 @@ def product_labels(request: Request, db: Session = Depends(get_db)):
         )
 
 
-@router.get("/product-listings/{label}/{build_info}")
+@router.get(
+    "/product-listings/{label}/{build_info}",
+    responses={
+        200: {
+            "content": {
+                "application/json": {
+                    "example": [
+                        {
+                            "AppStream-8.3.0.GA": {
+                                "python-dasbus-1.2-1.el8": {
+                                    "src": [
+                                        "aarch64",
+                                        "x86_64",
+                                        "s390x",
+                                        "ppc64le",
+                                    ]
+                                },
+                                "python3-dasbus-1.2-1.el8": {
+                                    "noarch": [
+                                        "aarch64",
+                                        "x86_64",
+                                        "s390x",
+                                        "ppc64le",
+                                    ]
+                                },
+                            }
+                        }
+                    ]
+                }
+            },
+        },
+    },
+)
 def product_listings(
     label: str,
     build_info: str,
     request: Request,
     db: Session = Depends(get_db),
 ):
+    """
+    Get a map of which variants of the given product included packages built
+    by the given build, and which arches each variant included.
+    """
     try:
         return products.get_product_listings(db, label, build_info)
     except products.ProductListingsNotFoundError as ex:
@@ -202,6 +277,10 @@ def module_product_listings(
     request: Request,
     db: Session = Depends(get_db),
 ):
+    """
+    Get a map of which variants of the given product included the given module,
+    and which arches each variant included.
+    """
     try:
         return products.get_module_product_listings(
             db, label, module_build_nvr
@@ -222,7 +301,7 @@ def module_product_listings(
         )
 
 
-@router.get("/permissions")
+@router.get("/permissions", responses={401: {}})
 def permissions() -> list[Permission]:
     """
     Lists user and group permissions for using **dbquery** API.
@@ -231,12 +310,28 @@ def permissions() -> list[Permission]:
     return parse_permissions(filename)
 
 
-@router.post("/dbquery")
+@router.post(
+    "/dbquery",
+    responses={
+        200: {
+            "content": {
+                "application/json": {
+                    "example": [
+                        ["HighAvailability-8.2.0.GA", False],
+                        ["NFV-8.2.0.GA", False],
+                    ]
+                }
+            },
+        },
+        401: {},
+        403: {},
+    },
+)
 async def dbquery(
     query_or_queries: SqlQuery | list[SqlQuery | str] | str,
     request: Request,
     db: Session = Depends(get_db),
-):
+) -> list[list[Any]]:
     """
     Executes given SQL queries with optionally provided parameters.
 
@@ -268,7 +363,7 @@ async def dbquery(
     if not has_permission(user, queries, permissions(), ldap_config_):
         logger.warning("Unauthorized access for user %s", user)
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
+            status_code=status.HTTP_403_FORBIDDEN,
             detail=f"User {user} is not authorized to use this query",
         )
 

@@ -76,7 +76,7 @@ def my_sort(x, y):
 
 
 def get_product_info(db, label):
-    """Get the latest version of product and it's variants."""
+    """Get the latest version of product and its variants."""
     products = db.query(models.Products).filter_by(label=label).all()
     versions = [x.version for x in products]
     # Use functools.cmp_to_key for python3

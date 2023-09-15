@@ -30,21 +30,12 @@ class SqlQuery(BaseModel):
         "json_schema_extra": {
             "examples": [
                 {
-                    "query": (
-                        "INSERT INTO products (label, version, variant, allow_source_only)"
-                        "  VALUES (:label, :version, :variant, :allow_source_only)"
-                    ),
                     "params": {
-                        "label": "product1",
-                        "version": "1.2",
-                        "variant": "Client",
-                        "allow_source_only": 1,
+                        "label": "RHEL-8.2.0.GA",
                     },
-                },
-                {
                     "query": (
-                        "SELECT label, version, variant, allow_source_only"
-                        "FROM products LIMIT 1"
+                        "SELECT variant, allow_source_only"
+                        "FROM products WHERE label = :label LIMIT 1"
                     ),
                 },
             ]

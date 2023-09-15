@@ -8,6 +8,8 @@ class TestRoot:
         expected_json = {
             "api_v1_url": "http://testserver/api/v1.0/",
             "documentation_url": expected_docs,
+            "api_reference": "http://testserver/redoc",
+            "swagger_ui": "http://testserver/docs",
         }
         assert r.status_code == 200
         assert r.json() == expected_json

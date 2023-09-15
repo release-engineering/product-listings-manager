@@ -30,7 +30,7 @@ class TestDBQuery:
         r = auth_client.post(
             "/api/v1.0/dbquery", json=query, headers=auth_headers()
         )
-        assert r.status_code == 401, r.text
+        assert r.status_code == 403, r.text
         assert r.json() == {
             "message": "User test_user is not authorized to use this query"
         }
@@ -40,7 +40,7 @@ class TestDBQuery:
         r = auth_client.post(
             "/api/v1.0/dbquery", json=queries, headers=auth_headers()
         )
-        assert r.status_code == 401, r.text
+        assert r.status_code == 403, r.text
         assert r.json() == {
             "message": "User test_user is not authorized to use this query"
         }
@@ -54,7 +54,7 @@ class TestDBQuery:
             r = auth_client.post(
                 "/api/v1.0/dbquery", json=query, headers=auth_headers()
             )
-        assert r.status_code == 401, r.text
+        assert r.status_code == 403, r.text
 
     def test_db_query_select_bad(self, auth_client):
         query = "SELECT * FROM bad_table"
