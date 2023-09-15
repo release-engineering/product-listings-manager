@@ -4,7 +4,7 @@ import binascii
 import logging
 
 import gssapi
-from fastapi import HTTPException
+from fastapi import HTTPException, status
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +25,8 @@ def process_gssapi_request(token):
         if not sc.complete:
             logger.error("Multiple GSSAPI round trips not supported")
             raise HTTPException(
-                status_code=403, detail="Attempted multiple GSSAPI round trips"
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Attempted multiple GSSAPI round trips",
             )
 
         logger.debug("Completed GSSAPI negotiation")
@@ -39,17 +40,18 @@ def process_gssapi_request(token):
             stage,
             e.gen_message(),
         )
-        raise HTTPException(status_code=403, detail="Authentication failed")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Authentication failed",
+        )
 
 
 def get_user(request):
-    return get_user_by_method(request, "Kerberos")
-
-
-def get_user_by_method(request, auth_method):
     if "Authorization" not in request.headers:
         raise HTTPException(
-            status_code=401, headers={"WWW-Authenticate": "Negotiate"}
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+            headers={"WWW-Authenticate": "Negotiate"},
         )
 
     header = request.headers.get("Authorization")
@@ -57,13 +59,14 @@ def get_user_by_method(request, auth_method):
 
     if scheme != "Negotiate":
         raise HTTPException(
-            status_code=401,
+            status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Unsupported authentication scheme; supported is Negotiate",
         )
 
     if not rest or not rest[0]:
         raise HTTPException(
-            status_code=401, detail="Missing authentication token"
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing authentication token",
         )
 
     token = rest[0]
@@ -72,7 +75,8 @@ def get_user_by_method(request, auth_method):
         user, token = process_gssapi_request(base64.b64decode(token))
     except binascii.Error:
         raise HTTPException(
-            status_code=401, detail="Invalid authentication token"
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authentication token",
         )
 
     token = base64.b64encode(token).decode("utf-8")

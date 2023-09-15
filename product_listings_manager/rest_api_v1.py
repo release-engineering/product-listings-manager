@@ -4,7 +4,7 @@ import logging
 import os
 from functools import lru_cache
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
@@ -35,7 +35,7 @@ def ldap_config() -> LdapConfig:
 
     if not ldap_host or not ldap_searches:
         raise HTTPException(
-            status_code=500,
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Server configuration LDAP_HOST and LDAP_SEARCHES is required.",
         )
 
@@ -104,7 +104,7 @@ def health(db: Session = Depends(get_db)):
     except Exception as e:
         logger.error("Failed to parse permissions configuration: %s", e)
         raise HTTPException(
-            status_code=503,
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail=f"Failed to parse permissions configuration: {e}",
         )
 
@@ -112,13 +112,19 @@ def health(db: Session = Depends(get_db)):
         db.execute(text("SELECT 1"))
     except SQLAlchemyError as e:
         logger.warning("DB health check failed: %s", e)
-        raise HTTPException(status_code=503, detail=f"DB Error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=f"DB Error: {e}",
+        )
 
     try:
         products.get_koji_session().getAPIVersion()
     except Exception as e:
         logger.warning("Koji health check failed: %s", e)
-        raise HTTPException(status_code=503, detail=f"Koji Error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=f"Koji Error: {e}",
+        )
 
     return Message(message=HEALTH_OK_MESSAGE)
 
@@ -138,12 +144,16 @@ def product_info(label: str, request: Request, db: Session = Depends(get_db)):
     try:
         versions, variants = products.get_product_info(db, label)
     except products.ProductListingsNotFoundError as ex:
-        raise HTTPException(status_code=404, detail=str(ex))
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=str(ex)
+        )
     except Exception as ex:
         utils.log_remote_call_error(
             request, "API call get_product_info() failed", label
         )
-        raise HTTPException(status_code=500, detail=str(ex))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(ex)
+        )
     return [versions, variants]
 
 
@@ -155,7 +165,9 @@ def product_labels(request: Request, db: Session = Depends(get_db)):
         utils.log_remote_call_error(
             request, "API call get_product_labels() failed"
         )
-        raise HTTPException(status_code=500, detail=str(ex))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(ex)
+        )
 
 
 @router.get("/product-listings/{label}/{build_info}")
@@ -168,7 +180,9 @@ def product_listings(
     try:
         return products.get_product_listings(db, label, build_info)
     except products.ProductListingsNotFoundError as ex:
-        raise HTTPException(status_code=404, detail=str(ex))
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=str(ex)
+        )
     except Exception as ex:
         utils.log_remote_call_error(
             request,
@@ -176,7 +190,9 @@ def product_listings(
             label,
             build_info,
         )
-        raise HTTPException(status_code=500, detail=str(ex))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(ex)
+        )
 
 
 @router.get("/module-product-listings/{label}/{module_build_nvr}")
@@ -191,7 +207,9 @@ def module_product_listings(
             db, label, module_build_nvr
         )
     except products.ProductListingsNotFoundError as ex:
-        raise HTTPException(status_code=404, detail=str(ex))
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=str(ex)
+        )
     except Exception as ex:
         utils.log_remote_call_error(
             request,
@@ -199,7 +217,9 @@ def module_product_listings(
             label,
             module_build_nvr,
         )
-        raise HTTPException(status_code=500, detail=str(ex))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(ex)
+        )
 
 
 @router.get("/permissions")
@@ -227,7 +247,8 @@ async def dbquery(
     """
     if not query_or_queries:
         raise HTTPException(
-            status_code=422, detail="Queries must not be empty"
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Queries must not be empty",
         )
 
     ldap_config_ = ldap_config()
@@ -247,7 +268,7 @@ async def dbquery(
     if not has_permission(user, queries, permissions(), ldap_config_):
         logger.warning("Unauthorized access for user %s", user)
         raise HTTPException(
-            status_code=401,
+            status_code=status.HTTP_401_UNAUTHORIZED,
             detail=f"User {user} is not authorized to use this query",
         )
 

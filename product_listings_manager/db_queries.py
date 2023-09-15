@@ -3,7 +3,7 @@
 import logging
 from typing import Any
 
-from fastapi import HTTPException
+from fastapi import HTTPException, status
 from sqlalchemy import text
 from sqlalchemy.exc import ResourceClosedError, SQLAlchemyError
 
@@ -22,7 +22,8 @@ def execute_queries(db, queries: list[SqlQuery]) -> list[list[Any]]:
             except SQLAlchemyError as e:
                 logger.warning("Failed DB query for user %s", e)
                 raise HTTPException(
-                    status_code=400, detail=f"DB query failed: {e}"
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"DB query failed: {e}",
                 )
 
         db.commit()

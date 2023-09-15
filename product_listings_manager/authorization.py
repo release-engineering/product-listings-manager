@@ -4,7 +4,7 @@ from collections.abc import Generator
 from dataclasses import dataclass
 
 import ldap
-from fastapi import HTTPException
+from fastapi import HTTPException, status
 
 log = logging.getLogger(__name__)
 
@@ -37,10 +37,12 @@ def get_user_groups(
     except ldap.SERVER_DOWN:
         log.exception("The LDAP server is unreachable")
         raise HTTPException(
-            status_code=502, detail="The LDAP server is unreachable"
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="The LDAP server is unreachable",
         )
     except ldap.LDAPError:
         log.exception("Unexpected LDAP connection error")
         raise HTTPException(
-            status_code=502, detail="Unexpected LDAP connection error"
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Unexpected LDAP connection error",
         )
