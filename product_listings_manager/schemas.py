@@ -35,7 +35,7 @@ class SqlQuery(BaseModel):
                     },
                     "query": (
                         "SELECT variant, allow_source_only"
-                        "FROM products WHERE label = :label LIMIT 1"
+                        " FROM products WHERE label = :label LIMIT 1"
                     ),
                 },
             ]

@@ -327,7 +327,7 @@ def permissions() -> list[Permission]:
         403: {},
     },
 )
-async def dbquery(
+def dbquery(
     query_or_queries: SqlQuery | list[SqlQuery | str] | str,
     request: Request,
     db: Session = Depends(get_db),
