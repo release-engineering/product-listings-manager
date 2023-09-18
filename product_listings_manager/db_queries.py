@@ -20,7 +20,7 @@ def execute_queries(db, queries: list[SqlQuery]) -> list[list[Any]]:
             try:
                 result = db.execute(text(query_text), params=params)
             except SQLAlchemyError as e:
-                logger.warning("Failed DB query for user %s", e)
+                logger.warning("DB query failed: %s", e)
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail=f"DB query failed: {e}",

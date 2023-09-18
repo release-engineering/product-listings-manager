@@ -361,12 +361,14 @@ async def dbquery(
         ]
 
     if not has_permission(user, queries, permissions(), ldap_config_):
-        logger.warning("Unauthorized access for user %s", user)
+        logger.warning(
+            "Unauthorized DB queries for user %s: %s", user, queries
+        )
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail=f"User {user} is not authorized to use this query",
         )
 
-    logger.info("Authorized access for user %s; input: %s", user, input)
+    logger.info("Authorized DB queries for user %s: %s", user, queries)
 
     return execute_queries(db, queries)

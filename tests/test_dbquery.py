@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: GPL-2.0+
+import logging
 from unittest.mock import ANY, patch
 
 from pytest import mark
@@ -188,3 +189,35 @@ class TestDBQuery:
         )
         assert r.status_code == 200, r.text
         assert r.json() == []
+
+    def test_db_query_logs_user_and_queries(self, auth_client, caplog):
+        queries = [
+            {
+                "query": (
+                    "INSERT INTO products (label, version, variant, allow_source_only)"
+                    " VALUES (:label, :version, :variant, :allow_source_only)"
+                ),
+                "params": {
+                    "label": f"product{x}",
+                    "version": "1.2",
+                    "variant": "Client",
+                    "allow_source_only": 1,
+                },
+            }
+            for x in range(2)
+        ]
+        with caplog.at_level(logging.INFO):
+            r = auth_client.post(
+                "/api/v1.0/dbquery",
+                json=queries,
+                headers=auth_headers(),
+            )
+        assert r.status_code == 200, r.text
+        assert r.json() == []
+
+        assert len(caplog.records) > 0
+        assert (
+            "Authorized DB queries for user test_user: ["
+            f"<SqlQuery: {queries[0]['query']!r} | {queries[0]['params']!r}>, "
+            f"<SqlQuery: {queries[1]['query']!r} | {queries[1]['params']!r}>]"
+        ) == caplog.records[0].message

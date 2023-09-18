@@ -41,3 +41,6 @@ class SqlQuery(BaseModel):
             ]
         }
     }
+
+    def __repr__(self):
+        return f"<SqlQuery: {self.query!r} | {self.params!r}>"
