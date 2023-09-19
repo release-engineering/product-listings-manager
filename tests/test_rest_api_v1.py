@@ -45,6 +45,7 @@ class TestIndex:
             "product_info_url": "http://testserver/api/v1.0/product-info/:label",
             "product_listings_url": "http://testserver/api/v1.0/product-listings/:label/:build_info",
             "product_labels_url": "http://testserver/api/v1.0/product-labels",
+            "permissions_url": "http://testserver/api/v1.0/permissions",
         }
         assert r.status_code == 200
         assert r.json() == expected_json

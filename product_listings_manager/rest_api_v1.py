@@ -79,6 +79,7 @@ def api_index(request: Request):
                 module_build_nvr=":module_build_nvr",
             )
         ),
+        "permissions_url": str(request.url_for("permissions")),
     }
 
 
