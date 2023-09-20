@@ -52,7 +52,8 @@ RUN set -ex \
     && deactivate \
     && mv /venv /mnt/rootfs \
     && mkdir -p /mnt/rootfs/src/docker \
-    && cp -v docker/docker-entrypoint.sh /mnt/rootfs/src/docker
+    && cp -v docker/docker-entrypoint.sh /mnt/rootfs/src/docker \
+    && cp -v docker/logging.ini /mnt/rootfs/src/docker
 
 # --- Final image
 FROM scratch
@@ -91,5 +92,6 @@ CMD [ \
     "--access-logfile=-", \
     "--enable-stdio-inheritance", \
     "--worker-class=uvicorn.workers.UvicornWorker", \
+    "--log-config=/src/docker/logging.ini", \
     "product_listings_manager.wsgi" \
     ]
