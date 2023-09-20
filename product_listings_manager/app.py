@@ -1,23 +1,26 @@
-from flask import Flask, jsonify
+# SPDX-License-Identifier: GPL-2.0+
+from fastapi import FastAPI
+from fastapi.responses import JSONResponse
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from product_listings_manager import rest_api_v1, root
-from product_listings_manager.config import load_config
 from product_listings_manager.logger import init_logging
-from product_listings_manager.models import db
+from product_listings_manager.middleware import UrlRedirectMiddleware
 
 
-def page_not_found_error(ex):
-    return jsonify({"error": str(ex)}), 404
+async def http_exception_handler(request, exc):
+    return JSONResponse(
+        {"message": exc.detail},
+        status_code=exc.status_code,
+        headers=exc.headers,
+    )
 
 
 def create_app():
-    app = Flask(__name__)
-
-    load_config(app)
+    app = FastAPI()
     init_logging(app)
-    db.init_app(app)
-
-    app.register_error_handler(404, page_not_found_error)
-    app.register_blueprint(root.blueprint, url_prefix="/")
-    app.register_blueprint(rest_api_v1.blueprint, url_prefix="/api/v1.0")
+    app.add_exception_handler(StarletteHTTPException, http_exception_handler)
+    app.add_middleware(UrlRedirectMiddleware)
+    app.include_router(root.router)
+    app.include_router(rest_api_v1.router)
     return app

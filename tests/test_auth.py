@@ -13,7 +13,7 @@ class TestLogin:
     def test_login_unconfigured(self, client):
         r = client.get("/api/v1.0/login")
         assert r.status_code == 500, r.text
-        assert r.json == {
+        assert r.json() == {
             "message": "Server configuration LDAP_HOST and LDAP_SEARCHES is required."
         }
 
@@ -26,13 +26,13 @@ class TestLogin:
         headers = {"Authorization": f"Negotiate BAD {token}"}
         r = auth_client.get("/api/v1.0/login", headers=headers)
         assert r.status_code == 401, r.text
-        assert r.json == {"message": "Invalid authentication token"}
+        assert r.json() == {"message": "Invalid authentication token"}
 
     def test_login_unsuported_auth_scheme(self, auth_client):
         headers = {"Authorization": "Bearer SECRET"}
         r = auth_client.get("/api/v1.0/login", headers=headers)
         assert r.status_code == 401, r.text
-        assert r.json == {
+        assert r.json() == {
             "message": "Unsupported authentication scheme; supported is Negotiate",
         }
 
@@ -41,24 +41,24 @@ class TestLogin:
         headers = {"Authorization": auth_header}
         r = auth_client.get("/api/v1.0/login", headers=headers)
         assert r.status_code == 401, r.text
-        assert r.json == {"message": "Missing authentication token"}
+        assert r.json() == {"message": "Missing authentication token"}
 
     def test_login_multiple_roundtrips(self, auth_client, gssapi_context):
         gssapi_context().complete = False
         r = auth_client.get("/api/v1.0/login", headers=auth_headers())
         assert r.status_code == 403, r.text
-        assert r.json == {"message": "Attempted multiple GSSAPI round trips"}
+        assert r.json() == {"message": "Attempted multiple GSSAPI round trips"}
 
     def test_login_gssapi_error(self, auth_client, gssapi_context):
         gssapi_context().step.side_effect = GSSError(1, 2)
         r = auth_client.get("/api/v1.0/login", headers=auth_headers())
         assert r.status_code == 403, r.text
-        assert r.json == {"message": "Authentication failed"}
+        assert r.json() == {"message": "Authentication failed"}
 
     def test_login(self, auth_client, ldap_connection):
         r = auth_client.get("/api/v1.0/login", headers=auth_headers())
         assert r.status_code == 200, r.text
-        assert r.json == {"user": "test_user", "groups": ["group1"]}
+        assert r.json() == {"user": "test_user", "groups": ["group1"]}
         ldap_connection.search_s.assert_called_once_with(
             LDAP_BASE, ANY, LDAP_SEARCH, ANY
         )
@@ -67,10 +67,10 @@ class TestLogin:
         ldap_connection.search_s.side_effect = SERVER_DOWN
         r = auth_client.get("/api/v1.0/login", headers=auth_headers())
         assert r.status_code == 502, r.text
-        assert r.json == {"message": "The LDAP server is unreachable"}
+        assert r.json() == {"message": "The LDAP server is unreachable"}
 
     def test_login_ldap_error(self, auth_client, ldap_connection):
         ldap_connection.search_s.side_effect = LDAPError
         r = auth_client.get("/api/v1.0/login", headers=auth_headers())
         assert r.status_code == 502, r.text
-        assert r.json == {"message": "Unexpected LDAP connection error"}
+        assert r.json() == {"message": "Unexpected LDAP connection error"}

@@ -3,4 +3,4 @@ class TestDoubleSlashURL:
         r = client.get("/api//v1.0/", follow_redirects=True)
         assert r.status_code == 200
         assert len(r.history) == 1
-        assert r.request.path == "/api/v1.0/"
+        assert r.request.url.path == "/api/v1.0/"

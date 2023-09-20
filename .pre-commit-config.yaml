@@ -53,7 +53,7 @@ repos:
     hooks:
       - id: pyupgrade
         args:
-          - --py39-plus
+          - --py311-plus
 
   # Security linter
   - repo: https://github.com/pycqa/bandit

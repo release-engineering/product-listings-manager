@@ -1,200 +1,375 @@
 # SPDX-License-Identifier: GPL-2.0+
+import json
+import logging
+import os
+from functools import lru_cache
 from typing import Any
 
-from flask import Blueprint, current_app, request, url_for
-from flask_restful import Api, Resource
+from fastapi import APIRouter, Depends, HTTPException, Request, status
+from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
-from werkzeug.exceptions import InternalServerError, NotFound, Unauthorized
+from sqlalchemy.orm import Session
 
 from product_listings_manager import __version__, products, utils
 from product_listings_manager.auth import get_user
 from product_listings_manager.authorization import LdapConfig, get_user_groups
-from product_listings_manager.db_queries import (
-    execute_queries,
-    queries_from_user_input,
-    validate_queries,
-)
-from product_listings_manager.models import db
+from product_listings_manager.db_queries import execute_queries
+from product_listings_manager.models import get_db
 from product_listings_manager.permissions import has_permission
+from product_listings_manager.schemas import (
+    LoginInfo,
+    Message,
+    Permission,
+    SqlQuery,
+)
 
-blueprint = Blueprint("api_v1", __name__)
+router = APIRouter(prefix="/api/v1.0")
+
+logger = logging.getLogger(__name__)
+
+HEALTH_OK_MESSAGE = "It works!"
 
 
 def ldap_config() -> LdapConfig:
-    ldap_host = current_app.config.get("LDAP_HOST")
-    ldap_searches = current_app.config.get("LDAP_SEARCHES")
+    ldap_host = os.getenv("PLM_LDAP_HOST")
+    ldap_searches = json.loads(os.getenv("PLM_LDAP_SEARCHES", "[]"))
 
     if not ldap_host or not ldap_searches:
-        raise InternalServerError(
-            "Server configuration LDAP_HOST and LDAP_SEARCHES is required."
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Server configuration LDAP_HOST and LDAP_SEARCHES is required.",
         )
 
     return LdapConfig(host=ldap_host, searches=ldap_searches)
 
 
-def permissions() -> list[dict[str, Any]]:
+@lru_cache
+def parse_permissions(filename) -> list[Permission]:
     """
     Return PERMISSIONS configuration.
     """
-    return current_app.config.get("PERMISSIONS", [])
+    if not filename:
+        return []
+
+    with open(filename) as f:
+        return [Permission.model_validate(x) for x in json.load(f)]
 
 
-class Index(Resource):
-    def get(self):
-        """Link to the the v1 API endpoints."""
-        return {
-            "about_url": url_for(".about", _external=True),
-            "health_url": url_for(".health", _external=True),
-            "product_info_url": url_for(
-                ".productinfo", label=":label", _external=True
-            ),
-            "product_labels_url": url_for(".productlabels", _external=True),
-            "product_listings_url": url_for(
-                ".productlistings",
+@router.get("/")
+def api_index(request: Request):
+    """Links to the v1 API endpoints."""
+    return {
+        "about_url": str(request.url_for("about")),
+        "health_url": str(request.url_for("health")),
+        "product_info_url": str(
+            request.url_for("product_info", label=":label")
+        ),
+        "product_labels_url": str(request.url_for("product_labels")),
+        "product_listings_url": str(
+            request.url_for(
+                "product_listings",
                 label=":label",
                 build_info=":build_info",
-                _external=True,
-            ),
-            "module_product_listings_url": url_for(
-                ".moduleproductlistings",
+            )
+        ),
+        "module_product_listings_url": str(
+            request.url_for(
+                "module_product_listings",
                 label=":label",
                 module_build_nvr=":module_build_nvr",
-                _external=True,
-            ),
-        }
-
-
-class About(Resource):
-    def get(self):
-        return {
-            "source": "https://github.com/release-engineering/product-listings-manager",
-            "version": __version__,
-        }
-
-
-class Health(Resource):
-    def get(self):
-        """Provides status report
-
-        * 200 if everything is ok
-        * 503 if service is not working as expected
-        """
-
-        try:
-            db.session.execute(db.text("SELECT 1"))
-        except SQLAlchemyError as e:
-            current_app.logger.warning("DB health check failed: %s", e)
-            return {"ok": False, "message": f"DB Error: {e}"}, 503
-
-        try:
-            products.get_koji_session().getAPIVersion()
-        except Exception as e:
-            current_app.logger.warning("Koji health check failed: %s", e)
-            return {"ok": False, "message": f"Koji Error: {e}"}, 503
-
-        return {"ok": True, "message": "It works!"}
-
-
-class Login(Resource):
-    def get(self):
-        ldap_config_ = ldap_config()
-        user, headers = get_user(request)
-        groups = set(get_user_groups(user, ldap_config_))
-
-        return {
-            "user": user,
-            "groups": sorted(groups),
-        }
-
-
-class ProductInfo(Resource):
-    def get(self, label):
-        try:
-            versions, variants = products.getProductInfo(label)
-        except products.ProductListingsNotFoundError as ex:
-            raise NotFound(str(ex))
-        except Exception:
-            utils.log_remote_call_error(
-                "API call getProductInfo() failed", label
             )
-            raise
-        return [versions, variants]
+        ),
+        "permissions_url": str(request.url_for("permissions")),
+    }
 
 
-class ProductLabels(Resource):
-    def get(self):
-        try:
-            return products.getProductLabels()
-        except Exception:
-            utils.log_remote_call_error("API call getProductLabels() failed")
-            raise
+@router.get("/about")
+def about():
+    """Shows information about the application."""
+    return {
+        "source": "https://github.com/release-engineering/product-listings-manager",
+        "version": __version__,
+    }
 
 
-class ProductListings(Resource):
-    def get(self, label, build_info):
-        try:
-            return products.getProductListings(label, build_info)
-        except products.ProductListingsNotFoundError as ex:
-            raise NotFound(str(ex))
-        except Exception:
-            utils.log_remote_call_error(
-                "API call getProductListings() failed", label, build_info
-            )
-            raise
+@router.get(
+    "/health",
+    responses={
+        200: {"model": Message(message=HEALTH_OK_MESSAGE)},
+        503: {"model": Message},
+    },
+)
+def health(db: Session = Depends(get_db)):
+    """Provides status report."""
 
-
-class ModuleProductListings(Resource):
-    def get(self, label, module_build_nvr):
-        try:
-            return products.getModuleProductListings(label, module_build_nvr)
-        except products.ProductListingsNotFoundError as ex:
-            raise NotFound(str(ex))
-        except Exception:
-            utils.log_remote_call_error(
-                "API call getModuleProductListings() failed",
-                label,
-                module_build_nvr,
-            )
-            raise
-
-
-class Permissions(Resource):
-    def get(self):
-        return permissions()
-
-
-class DBQuery(Resource):
-    def post(self):
-        ldap_config_ = ldap_config()
-        user, headers = get_user(request)
-        input = request.get_json(force=True)
-        queries = queries_from_user_input(input)
-        validate_queries(queries)
-
-        if not has_permission(user, queries, permissions(), ldap_config_):
-            current_app.logger.warning("Unauthorized access for user %s", user)
-            raise Unauthorized(
-                f"User {user} is not authorized to use this query"
-            )
-
-        current_app.logger.info(
-            "Authorized access for user %s; input: %s", user, input
+    try:
+        permissions()
+    except Exception as e:
+        logger.error("Failed to parse permissions configuration: %s", e)
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=f"Failed to parse permissions configuration: {e}",
         )
 
-        return execute_queries(queries), 200
+    try:
+        db.execute(text("SELECT 1"))
+    except SQLAlchemyError as e:
+        logger.warning("DB health check failed: %s", e)
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=f"DB Error: {e}",
+        )
+
+    try:
+        products.get_koji_session().getAPIVersion()
+    except Exception as e:
+        logger.warning("Koji health check failed: %s", e)
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=f"Koji Error: {e}",
+        )
+
+    return Message(message=HEALTH_OK_MESSAGE)
 
 
-api = Api(blueprint)
-api.add_resource(Index, "/")
-api.add_resource(About, "/about")
-api.add_resource(Health, "/health")
-api.add_resource(Login, "/login")
-api.add_resource(ProductInfo, "/product-info/<label>")
-api.add_resource(ProductLabels, "/product-labels")
-api.add_resource(ProductListings, "/product-listings/<label>/<build_info>")
-api.add_resource(
-    ModuleProductListings,
-    "/module-product-listings/<label>/<module_build_nvr>",
+@router.get("/login", responses={401: {}})
+def login(request: Request) -> LoginInfo:
+    """Shows the current user and assigned groups."""
+    ldap_config_ = ldap_config()
+    user, headers = get_user(request)
+    groups = set(get_user_groups(user, ldap_config_))
+
+    return LoginInfo(user=user, groups=sorted(groups))
+
+
+@router.get(
+    "/product-info/{label}",
+    responses={
+        200: {
+            "content": {
+                "application/json": {
+                    "example": [
+                        "8.2.0",
+                        [
+                            "Supplementary-8.2.0.GA",
+                            "AppStream-8.2.0.GA",
+                            "BaseOS-8.2.0.GA",
+                        ],
+                    ]
+                }
+            },
+        },
+    },
 )
-api.add_resource(Permissions, "/permissions")
-api.add_resource(DBQuery, "/dbquery")
+def product_info(
+    label: str, request: Request, db: Session = Depends(get_db)
+) -> tuple[str, list[str]]:
+    """Get the latest version of a product and its variants."""
+    try:
+        versions, variants = products.get_product_info(db, label)
+    except products.ProductListingsNotFoundError as ex:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=str(ex)
+        )
+    except Exception as ex:
+        utils.log_remote_call_error(
+            request, "API call get_product_info() failed", label
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(ex)
+        )
+    return (versions, variants)
+
+
+@router.get(
+    "/product-labels",
+    responses={
+        200: {
+            "content": {
+                "application/json": {
+                    "example": [
+                        {"label": "RHEL-8.2.1.MAIN"},
+                        {"label": "RHEL-8.2.0.GA"},
+                        {"label": "RHEL-8.2.0"},
+                    ]
+                }
+            },
+        },
+    },
+)
+def product_labels(request: Request, db: Session = Depends(get_db)):
+    """List all product labels."""
+    try:
+        return products.get_product_labels(db)
+    except Exception as ex:
+        utils.log_remote_call_error(
+            request, "API call get_product_labels() failed"
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(ex)
+        )
+
+
+@router.get(
+    "/product-listings/{label}/{build_info}",
+    responses={
+        200: {
+            "content": {
+                "application/json": {
+                    "example": [
+                        {
+                            "AppStream-8.3.0.GA": {
+                                "python-dasbus-1.2-1.el8": {
+                                    "src": [
+                                        "aarch64",
+                                        "x86_64",
+                                        "s390x",
+                                        "ppc64le",
+                                    ]
+                                },
+                                "python3-dasbus-1.2-1.el8": {
+                                    "noarch": [
+                                        "aarch64",
+                                        "x86_64",
+                                        "s390x",
+                                        "ppc64le",
+                                    ]
+                                },
+                            }
+                        }
+                    ]
+                }
+            },
+        },
+    },
+)
+def product_listings(
+    label: str,
+    build_info: str,
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    """
+    Get a map of which variants of the given product included packages built
+    by the given build, and which arches each variant included.
+    """
+    try:
+        return products.get_product_listings(db, label, build_info)
+    except products.ProductListingsNotFoundError as ex:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=str(ex)
+        )
+    except Exception as ex:
+        utils.log_remote_call_error(
+            request,
+            "API call get_product_listings() failed",
+            label,
+            build_info,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(ex)
+        )
+
+
+@router.get("/module-product-listings/{label}/{module_build_nvr}")
+def module_product_listings(
+    label: str,
+    module_build_nvr: str,
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    """
+    Get a map of which variants of the given product included the given module,
+    and which arches each variant included.
+    """
+    try:
+        return products.get_module_product_listings(
+            db, label, module_build_nvr
+        )
+    except products.ProductListingsNotFoundError as ex:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=str(ex)
+        )
+    except Exception as ex:
+        utils.log_remote_call_error(
+            request,
+            "API call get_module_product_listings() failed",
+            label,
+            module_build_nvr,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(ex)
+        )
+
+
+@router.get("/permissions", responses={401: {}})
+def permissions() -> list[Permission]:
+    """
+    Lists user and group permissions for using **dbquery** API.
+    """
+    filename = os.getenv("PLM_PERMISSIONS")
+    return parse_permissions(filename)
+
+
+@router.post(
+    "/dbquery",
+    responses={
+        200: {
+            "content": {
+                "application/json": {
+                    "example": [
+                        ["HighAvailability-8.2.0.GA", False],
+                        ["NFV-8.2.0.GA", False],
+                    ]
+                }
+            },
+        },
+        401: {},
+        403: {},
+    },
+)
+def dbquery(
+    query_or_queries: SqlQuery | list[SqlQuery | str] | str,
+    request: Request,
+    db: Session = Depends(get_db),
+) -> list[list[Any]]:
+    """
+    Executes given SQL queries with optionally provided parameters.
+
+    Multiple queries can be provided (pass as an array) but only the result
+    (listed rows) from the last query will be returned.
+
+    User must be logged in and have permission to execute the queries.
+    """
+    if not query_or_queries:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Queries must not be empty",
+        )
+
+    ldap_config_ = ldap_config()
+    user, headers = get_user(request)
+
+    # normalize queries type to list of SqlQuery
+    if isinstance(query_or_queries, SqlQuery):
+        queries = [query_or_queries]
+    elif isinstance(query_or_queries, str):
+        queries = [SqlQuery(query=query_or_queries)]
+    elif isinstance(query_or_queries, list):
+        queries = [
+            q if isinstance(q, SqlQuery) else SqlQuery(query=q)
+            for q in query_or_queries
+        ]
+
+    if not has_permission(user, queries, permissions(), ldap_config_):
+        logger.warning(
+            "Unauthorized DB queries for user %s: %s", user, queries
+        )
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"User {user} is not authorized to use this query",
+        )
+
+    logger.info("Authorized DB queries for user %s: %s", user, queries)
+
+    return execute_queries(db, queries)
