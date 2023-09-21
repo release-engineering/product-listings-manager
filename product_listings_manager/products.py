@@ -38,12 +38,9 @@ def get_build(nvr, session=None):
         session = get_koji_session()
 
     try:
-        build = session.getBuild(nvr, strict=True)
+        return session.getBuild(nvr, strict=True)
     except koji.GenericError as ex:
         raise ProductListingsNotFoundError(str(ex))
-
-    logger.debug(f"Build info: {build}")
-    return build
 
 
 class ProductListingsNotFoundError(ValueError):
