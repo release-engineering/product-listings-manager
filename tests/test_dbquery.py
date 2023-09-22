@@ -73,6 +73,12 @@ class TestDBQuery:
             # SQL is case-insensitive
             "select ID, LABEL, VERSION, VARIANT from PRODUCTS",
             "select id, label, version, variant from products",
+            # multi-line and indentation
+            """
+            SELECT
+              id, label, version, variant
+                FROM products
+            """,
         ),
     )
     def test_db_query_select(self, auth_client, query):
