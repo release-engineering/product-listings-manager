@@ -18,7 +18,7 @@ def process_gssapi_request(token):
 
         stage = "step context"
         token = sc.step(token if token else None)
-        token = token if token is not None else ""
+        token = token if token is not None else b""
 
         # The current architecture cannot support continuation here
         stage = "checking completion"
