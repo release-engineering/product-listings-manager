@@ -89,8 +89,18 @@ class TestDBQuery:
         )
         assert r.status_code == 200, r.text
         assert r.json() == [
-            [p1.id, "product1", "1.2", "Client"],
-            [p2.id, "product2", "2.3", "Server"],
+            {
+                "id": p1.id,
+                "label": "product1",
+                "version": "1.2",
+                "variant": "Client",
+            },
+            {
+                "id": p2.id,
+                "label": "product2",
+                "version": "2.3",
+                "variant": "Server",
+            },
         ]
 
     def test_db_query_insert(self, auth_client):
@@ -119,7 +129,14 @@ class TestDBQuery:
             )
             assert r.status_code == 200, r.text
 
-        assert r.json() == [["product1", "1.2", "Client", 1]]
+        assert r.json() == [
+            {
+                "label": "product1",
+                "version": "1.2",
+                "variant": "Client",
+                "allow_source_only": 1,
+            }
+        ]
 
     def test_db_query_insert_with_select(self, auth_client):
         queries = [
@@ -143,7 +160,14 @@ class TestDBQuery:
             headers=auth_headers(),
         )
         assert r.status_code == 200, r.text
-        assert r.json() == [["product1", "1.2", "Client", 1]]
+        assert r.json() == [
+            {
+                "label": "product1",
+                "version": "1.2",
+                "variant": "Client",
+                "allow_source_only": 1,
+            }
+        ]
 
     def test_db_query_insert_with_rollback(self, auth_client):
         queries = [
