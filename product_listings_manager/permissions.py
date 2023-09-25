@@ -1,13 +1,18 @@
 # SPDX-License-Identifier: GPL-2.0+
+import re
 from fnmatch import fnmatchcase
 
 from product_listings_manager.authorization import LdapConfig, get_user_groups
 from product_listings_manager.schemas import Permission, SqlQuery
 
 
+def normalize(text):
+    return re.sub(r"\s+", " ", text.strip().upper())
+
+
 def query_matches(query: str, permission: Permission) -> bool:
     return any(
-        fnmatchcase(query.upper(), pattern.upper())
+        fnmatchcase(normalize(query), normalize(pattern))
         for pattern in permission.queries
     )
 
