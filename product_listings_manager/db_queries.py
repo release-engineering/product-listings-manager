@@ -12,7 +12,7 @@ from product_listings_manager.schemas import SqlQuery
 logger = logging.getLogger(__name__)
 
 
-def execute_queries(db, queries: list[SqlQuery]) -> list[list[Any]]:
+def execute_queries(db, queries: list[SqlQuery]) -> list[dict[str, Any]]:
     with db.begin():
         for query in queries:
             query_text = query.query
@@ -29,6 +29,6 @@ def execute_queries(db, queries: list[SqlQuery]) -> list[list[Any]]:
         db.commit()
 
     try:
-        return [list(row) for row in result]
+        return [dict(row._mapping) for row in result]
     except ResourceClosedError:
         return []

@@ -332,7 +332,7 @@ def dbquery(
     query_or_queries: SqlQuery | list[SqlQuery | str] | str,
     request: Request,
     db: Session = Depends(get_db),
-) -> list[list[Any]]:
+) -> list[dict[str, Any]]:
     """
     Executes given SQL queries with optionally provided parameters.
 
