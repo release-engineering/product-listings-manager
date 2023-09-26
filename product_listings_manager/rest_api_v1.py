@@ -318,8 +318,14 @@ def permissions() -> list[Permission]:
             "content": {
                 "application/json": {
                     "example": [
-                        ["HighAvailability-8.2.0.GA", False],
-                        ["NFV-8.2.0.GA", False],
+                        {
+                            "variant": "HighAvailability-8.2.0.GA",
+                            "allow_source_only": False,
+                        },
+                        {
+                            "variant": "NFV-8.2.0.GA",
+                            "allow_source_only": False,
+                        },
                     ]
                 }
             },
