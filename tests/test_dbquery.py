@@ -138,6 +138,28 @@ class TestDBQuery:
             }
         ]
 
+    def test_db_query_insert_returning_id(self, auth_client):
+        query = {
+            "query": (
+                "INSERT INTO products (label, version, variant, allow_source_only)"
+                "  VALUES (:label, :version, :variant, :allow_source_only)"
+                "  RETURNING id"
+            ),
+            "params": {
+                "label": "product1",
+                "version": "1.2",
+                "variant": "Client",
+                "allow_source_only": 1,
+            },
+        }
+        r = auth_client.post(
+            "/api/v1.0/dbquery",
+            json=query,
+            headers=auth_headers(),
+        )
+        assert r.status_code == 200, r.text
+        assert r.json() == [{"id": ANY}]
+
     def test_db_query_insert_with_select(self, auth_client):
         queries = [
             {
