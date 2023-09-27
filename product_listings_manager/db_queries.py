@@ -13,22 +13,23 @@ logger = logging.getLogger(__name__)
 
 
 def execute_queries(db, queries: list[SqlQuery]) -> list[dict[str, Any]]:
-    with db.begin():
-        for query in queries:
-            query_text = query.query
-            params = query.params
+    for query in queries:
+        query_text = query.query
+        params = query.params
+        try:
+            result = db.execute(text(query_text), params=params)
+
+            # Always fetch the result to avoid "SQL statements in progress" error.
             try:
-                result = db.execute(text(query_text), params=params)
-            except SQLAlchemyError as e:
-                logger.warning("DB query failed: %s", e)
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"DB query failed: {e}",
-                )
+                rows = [dict(row._mapping) for row in result]
+            except ResourceClosedError:
+                rows = []
+        except SQLAlchemyError as e:
+            logger.warning("DB query failed: %s", e)
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"DB query failed: {e}",
+            )
 
-        db.commit()
-
-    try:
-        return [dict(row._mapping) for row in result]
-    except ResourceClosedError:
-        return []
+    db.commit()
+    return rows
