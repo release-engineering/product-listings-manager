@@ -3,9 +3,9 @@ import json
 import logging
 import os
 from functools import lru_cache
-from typing import Any
+from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Body, Depends, HTTPException, Request, status
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
@@ -17,6 +17,7 @@ from product_listings_manager.db_queries import execute_queries
 from product_listings_manager.models import get_db
 from product_listings_manager.permissions import has_permission
 from product_listings_manager.schemas import (
+    SQL_QUERY_EXAMPLES,
     LoginInfo,
     Message,
     Permission,
@@ -335,17 +336,26 @@ def permissions() -> list[Permission]:
     },
 )
 def dbquery(
-    query_or_queries: SqlQuery | list[SqlQuery | str] | str,
+    query_or_queries: Annotated[
+        SqlQuery | list[SqlQuery | str] | str,
+        Body(openapi_examples=SQL_QUERY_EXAMPLES),
+    ],
     request: Request,
     db: Session = Depends(get_db),
 ) -> list[dict[str, Any]]:
     """
     Executes given SQL queries with optionally provided parameters.
 
-    Multiple queries can be provided (pass as an array) but only the result
+    Multiple SQL queries can be provided (pass as an array) but only the result
     (listed rows) from the last query will be returned.
 
     User must be logged in and have permission to execute the queries.
+
+    Format for *placeholders* in the SQL queries is `:placeholder_name`.
+
+    Instead of using a `IN` SQL operator with a placeholder in a `WHERE` clause,
+    use format like `trees_id = ANY(:tree_ids)` where value for the placeholder
+    would be a list with the required values.
     """
     if not query_or_queries:
         raise HTTPException(
