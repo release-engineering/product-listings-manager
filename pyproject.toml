@@ -30,7 +30,7 @@ pytest = {version = "^7.4.0", optional = true}
 pytest-cov = {version = "^4.1.0", optional = true}
 httpx = {version = "^0.25.0", optional = true}
 
-SQLAlchemy = "^2.0.21"
+SQLAlchemy = "^2.0.22"
 psycopg2-binary = "^2.9.8"
 koji = "^1.33.1"
 
