@@ -20,7 +20,7 @@ include = [
 
 [tool.poetry.dependencies]
 python = ">=3.9,<3.12"
-fastapi = "^0.103.2"
+fastapi = "^0.104.1"
 gunicorn = "^21.2.0"
 python-dateutil = "^2.8.2"
 
