@@ -18,9 +18,7 @@ class UrlRedirectMiddleware:
     def __init__(self, app: ASGIApp) -> None:
         self.app = app
 
-    async def __call__(
-        self, scope: Scope, receive: Receive, send: Send
-    ) -> None:
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         url = URL(scope=scope)
         if "//" in url.path:
             url = url.replace(path=repeated_quotes.sub("/", url.path))

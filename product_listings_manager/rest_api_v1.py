@@ -61,9 +61,7 @@ def api_index(request: Request):
     return {
         "about_url": str(request.url_for("about")),
         "health_url": str(request.url_for("health")),
-        "product_info_url": str(
-            request.url_for("product_info", label=":label")
-        ),
+        "product_info_url": str(request.url_for("product_info", label=":label")),
         "product_labels_url": str(request.url_for("product_labels")),
         "product_listings_url": str(
             request.url_for(
@@ -168,9 +166,7 @@ def product_info(
     try:
         versions, variants = products.get_product_info(db, label)
     except products.ProductListingsNotFoundError as ex:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=str(ex)
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(ex))
     except Exception as ex:
         utils.log_remote_call_error(
             request, "API call get_product_info() failed", label
@@ -202,9 +198,7 @@ def product_labels(request: Request, db: Session = Depends(get_db)):
     try:
         return products.get_product_labels(db)
     except Exception as ex:
-        utils.log_remote_call_error(
-            request, "API call get_product_labels() failed"
-        )
+        utils.log_remote_call_error(request, "API call get_product_labels() failed")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(ex)
         )
@@ -256,9 +250,7 @@ def product_listings(
     try:
         return products.get_product_listings(db, label, build_info)
     except products.ProductListingsNotFoundError as ex:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=str(ex)
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(ex))
     except Exception as ex:
         utils.log_remote_call_error(
             request,
@@ -283,13 +275,9 @@ def module_product_listings(
     and which arches each variant included.
     """
     try:
-        return products.get_module_product_listings(
-            db, label, module_build_nvr
-        )
+        return products.get_module_product_listings(db, label, module_build_nvr)
     except products.ProductListingsNotFoundError as ex:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=str(ex)
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(ex))
     except Exception as ex:
         utils.log_remote_call_error(
             request,
@@ -368,9 +356,7 @@ def dbquery(
         ]
 
     if not has_permission(user, queries, permissions(), ldap_config_):
-        logger.warning(
-            "Unauthorized DB queries for user %s: %s", user, queries
-        )
+        logger.warning("Unauthorized DB queries for user %s: %s", user, queries)
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail=f"User {user} is not authorized to use this query",

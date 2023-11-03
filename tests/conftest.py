@@ -50,9 +50,7 @@ def pytest_configure(config):
 def pytest_collection_modifyitems(config, items):
     if config.getoption("--live"):
         return
-    skip_live = mark.skip(
-        reason="use --live argument to query production servers"
-    )
+    skip_live = mark.skip(reason="use --live argument to query production servers")
     for item in items:
         if "live" in item.keywords:
             item.add_marker(skip_live)
@@ -101,9 +99,7 @@ def ldap_connection(client):
 
 
 @fixture
-def auth_client(
-    client, monkeypatch, tmp_path, gssapi_context, ldap_connection
-):
+def auth_client(client, monkeypatch, tmp_path, gssapi_context, ldap_connection):
     ldap_searches = [{"BASE": LDAP_BASE, "SEARCH_STRING": LDAP_SEARCH}]
     monkeypatch.setenv("PLM_LDAP_HOST", "ldap://ldap.example.com")
     monkeypatch.setenv("PLM_LDAP_SEARCHES", json.dumps(ldap_searches))

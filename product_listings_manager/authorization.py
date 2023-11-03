@@ -27,9 +27,7 @@ def get_group_membership(
     return [group[1]["cn"][0].decode("utf-8") for group in results]
 
 
-def get_user_groups(
-    user: str, ldap_config: LdapConfig
-) -> Generator[str, None, None]:
+def get_user_groups(user: str, ldap_config: LdapConfig) -> Generator[str, None, None]:
     try:
         ldap_connection = ldap.initialize(ldap_config.host)
         for ldap_search in ldap_config.searches:

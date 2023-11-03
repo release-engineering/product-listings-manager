@@ -127,10 +127,7 @@ def get_match_versions(db, product):
     Returns the list of packages for this product where we must match the version.
     """
     return [
-        m.name
-        for m in db.query(models.MatchVersions)
-        .filter_by(product=product)
-        .all()
+        m.name for m in db.query(models.MatchVersions).filter_by(product=product).all()
     ]
 
 
@@ -244,10 +241,7 @@ def get_module_overrides(
 
 def get_product_labels(db):
     rows = (
-        db.query(models.Products)
-        .with_entities(models.Products.label)
-        .distinct()
-        .all()
+        db.query(models.Products).with_entities(models.Products.label).distinct().all()
     )
     return [{"label": row.label} for row in rows]
 
@@ -296,9 +290,7 @@ def get_product_listings(db, productLabel, buildInfo):
                 rpm_version = None
 
         # without debuginfos
-        rpms_nondebug = [
-            rpm for rpm in rpms if not koji.is_debuginfo(rpm["name"])
-        ]
+        rpms_nondebug = [rpm for rpm in rpms if not koji.is_debuginfo(rpm["name"])]
         d = {}
         all_archs = {rpm["arch"] for rpm in rpms_nondebug}
         for arch in all_archs:
@@ -320,9 +312,9 @@ def get_product_listings(db, productLabel, buildInfo):
                 for x in dest_archs:
                     cache_map[srpm][rpm["arch"]][x] = 1
             for dest_arch in dest_archs:
-                listings.setdefault(variant, {}).setdefault(
-                    rpm["nvr"], {}
-                ).setdefault(rpm["arch"], []).append(dest_arch)
+                listings.setdefault(variant, {}).setdefault(rpm["nvr"], {}).setdefault(
+                    rpm["arch"], []
+                ).append(dest_arch)
 
         # debuginfo only
         rpms_debug = [rpm for rpm in rpms if koji.is_debuginfo(rpm["name"])]
@@ -347,9 +339,9 @@ def get_product_listings(db, productLabel, buildInfo):
                 for x in dest_archs:
                     cache_map[srpm][rpm["arch"]][x] = 1
             for dest_arch in dest_archs:
-                listings.setdefault(variant, {}).setdefault(
-                    rpm["nvr"], {}
-                ).setdefault(rpm["arch"], []).append(dest_arch)
+                listings.setdefault(variant, {}).setdefault(rpm["nvr"], {}).setdefault(
+                    rpm["arch"], []
+                ).append(dest_arch)
 
         for variant in list(listings.keys()):
             nvrs = list(listings[variant].keys())
@@ -374,9 +366,7 @@ def get_module_product_listings(db, productLabel, moduleNVR):
         module_name = module["name"]
         module_stream = module["stream"]
     except (KeyError, TypeError):
-        raise ProductListingsNotFoundError(
-            "It's not a module build: %s" % moduleNVR
-        )
+        raise ProductListingsNotFoundError("It's not a module build: %s" % moduleNVR)
 
     prodinfo = get_product_info(db, productLabel)
     version, variants = prodinfo
@@ -403,7 +393,7 @@ def get_module_product_listings(db, productLabel, moduleNVR):
             db, productLabel, version, module_name, module_stream, variant
         )
 
-        archs = sorted(set([arch for arch, in module_trees] + overrides))
+        archs = sorted(set([arch for (arch,) in module_trees] + overrides))
 
         if archs:
             listings.setdefault(variant, archs)
