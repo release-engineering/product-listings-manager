@@ -12,9 +12,7 @@ SERVERS = {
 parser = argparse.ArgumentParser()
 parser.add_argument("server", choices=SERVERS.keys())
 parser.add_argument("--product", default="RHEL-6-Server-EXTRAS-6")
-parser.add_argument(
-    "--nvr", default="dumb-init-1.2.0-1.20170802gitd283f8a.el6"
-)
+parser.add_argument("--nvr", default="dumb-init-1.2.0-1.20170802gitd283f8a.el6")
 args = parser.parse_args()
 
 url = SERVERS[args.server]

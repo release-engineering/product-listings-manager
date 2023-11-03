@@ -27,9 +27,7 @@ def has_permission(
     qs = [
         q
         for q in qs
-        if not any(
-            user in p.users and query_matches(q, p) for p in permissions
-        )
+        if not any(user in p.users and query_matches(q, p) for p in permissions)
     ]
     if not qs:
         return True
@@ -43,8 +41,7 @@ def has_permission(
         q
         for q in qs
         if not any(
-            not groups.isdisjoint(p.groups) and query_matches(q, p)
-            for p in permissions
+            not groups.isdisjoint(p.groups) and query_matches(q, p) for p in permissions
         )
     ]
     return not qs

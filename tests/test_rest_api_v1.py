@@ -26,12 +26,8 @@ def exception_log(app):
 
 @fixture
 def mock_koji_session():
-    with patch(
-        "product_listings_manager.products.koji.ClientSession"
-    ) as mocked:
-        with patch(
-            "product_listings_manager.products.koji.read_config", autospec=True
-        ):
+    with patch("product_listings_manager.products.koji.ClientSession") as mocked:
+        with patch("product_listings_manager.products.koji.read_config", autospec=True):
             yield mocked()
 
 
@@ -75,9 +71,7 @@ class TestHealth:
         assert r.status_code == 503, r.text
         assert "DB Error:" in r.json().get("message", "")
 
-    def test_health_permissions_file_not_found(
-        self, client, monkeypatch, tmp_path
-    ):
+    def test_health_permissions_file_not_found(self, client, monkeypatch, tmp_path):
         permissions_file = tmp_path / "permissions_empty.json"
         monkeypatch.setenv("PLM_PERMISSIONS", str(permissions_file))
 
@@ -87,9 +81,7 @@ class TestHealth:
             "message", ""
         )
 
-    def test_health_permissions_file_invalid(
-        self, client, monkeypatch, tmp_path
-    ):
+    def test_health_permissions_file_invalid(self, client, monkeypatch, tmp_path):
         permissions_file = tmp_path / "permissions_bad.json"
         with open(permissions_file, "w") as f:
             f.write("[{}]")
@@ -215,12 +207,10 @@ class TestProductListings:
         }
 
     @patch("product_listings_manager.products.get_product_listings")
-    def test_product_listings_not_found(
-        self, mock_get_product_listings, client
-    ):
+    def test_product_listings_not_found(self, mock_get_product_listings, client):
         error_message = "NOT FOUND"
-        mock_get_product_listings.side_effect = (
-            products.ProductListingsNotFoundError(error_message)
+        mock_get_product_listings.side_effect = products.ProductListingsNotFoundError(
+            error_message
         )
         r = client.get(self.path)
         assert r.status_code == 404
@@ -278,9 +268,7 @@ class TestProductListings:
         assert r.status_code == 200
         assert r.json() == {variant: {self.nvr: {"src": ["x86_64"]}}}
 
-    def test_get_product_listings_missing_build(
-        self, mock_koji_session, client
-    ):
+    def test_get_product_listings_missing_build(self, mock_koji_session, client):
         error = f"No such build: '{self.nvr}'"
         mock_koji_session.getBuild.side_effect = koji.GenericError(error)
         r = client.get(self.path)
@@ -307,9 +295,7 @@ class TestModuleProductListings:
             }
         }
         variant = "AppStream-8.0.0"
-        p = ProductsFactory(
-            label=self.product_label, version="8.0.0", variant=variant
-        )
+        p = ProductsFactory(label=self.product_label, version="8.0.0", variant=variant)
         m = ModulesFactory(name=self.module_name, stream=self.module_stream)
         t = TreesFactory()
         t.products.append(p)
@@ -321,9 +307,7 @@ class TestModuleProductListings:
         assert r.json() == {variant: [t.arch]}
 
     @patch("product_listings_manager.products.get_module_product_listings")
-    def test_product_listings_not_found(
-        self, mock_get_module_product_listings, client
-    ):
+    def test_product_listings_not_found(self, mock_get_module_product_listings, client):
         error_message = "NOT FOUND"
         mock_get_module_product_listings.side_effect = (
             products.ProductListingsNotFoundError(error_message)

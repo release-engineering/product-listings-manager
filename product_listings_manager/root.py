@@ -3,9 +3,7 @@ from fastapi import APIRouter, Request
 
 router = APIRouter()
 
-DOCUMENTATION_URL = (
-    "https://github.com/release-engineering/product-listings-manager"
-)
+DOCUMENTATION_URL = "https://github.com/release-engineering/product-listings-manager"
 
 
 @router.get("/")

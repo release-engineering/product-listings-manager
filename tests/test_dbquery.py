@@ -21,16 +21,12 @@ class TestDBQuery:
         ),
     )
     def test_db_query_bad_params(self, auth_client, input):
-        r = auth_client.post(
-            "/api/v1.0/dbquery", json=input, headers=auth_headers()
-        )
+        r = auth_client.post("/api/v1.0/dbquery", json=input, headers=auth_headers())
         assert r.status_code == 422, r.text
 
     def test_db_query_unauthorized(self, auth_client):
         query = "DELETE FROM products"
-        r = auth_client.post(
-            "/api/v1.0/dbquery", json=query, headers=auth_headers()
-        )
+        r = auth_client.post("/api/v1.0/dbquery", json=query, headers=auth_headers())
         assert r.status_code == 403, r.text
         assert r.json() == {
             "message": "User test_user is not authorized to use this query"
@@ -38,9 +34,7 @@ class TestDBQuery:
 
     def test_db_query_unauthorized_multiple_queries(self, auth_client):
         queries = ["SELECT * FROM products;", "DELETE FROM products"]
-        r = auth_client.post(
-            "/api/v1.0/dbquery", json=queries, headers=auth_headers()
-        )
+        r = auth_client.post("/api/v1.0/dbquery", json=queries, headers=auth_headers())
         assert r.status_code == 403, r.text
         assert r.json() == {
             "message": "User test_user is not authorized to use this query"
@@ -117,9 +111,7 @@ class TestDBQuery:
                     "allow_source_only": 1,
                 },
             },
-            [
-                "SELECT label, version, variant, allow_source_only FROM products"
-            ],
+            ["SELECT label, version, variant, allow_source_only FROM products"],
         ]
         for query in queries:
             r = auth_client.post(

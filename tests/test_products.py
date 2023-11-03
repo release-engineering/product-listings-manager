@@ -26,9 +26,7 @@ from product_listings_manager.products import (
 
 @pytest.fixture
 def db():
-    with patch(
-        "product_listings_manager.models.SessionLocal", autospec=True
-    ) as mocked:
+    with patch("product_listings_manager.models.SessionLocal", autospec=True) as mocked:
         yield mocked()
 
 
@@ -78,9 +76,7 @@ class TestProduct:
         label = "Fake-label"
         with pytest.raises(ProductListingsNotFoundError) as excinfo:
             get_product_info(db, label)
-        assert f"Could not find a product with label: {label}" == str(
-            excinfo.value
-        )
+        assert f"Could not find a product with label: {label}" == str(excinfo.value)
 
     def test_get_overrides(self, db):
         label = "RHEL-7"
@@ -130,9 +126,9 @@ class TestProduct:
             TreesModel(id=2, arch="x86_64"),
             TreesModel(id=1, arch="ppc64"),
         ]
-        assert sorted(
-            precalc_treelist(db, "fake-product", "7.5", "Server")
-        ) == sorted([1, 3])
+        assert sorted(precalc_treelist(db, "fake-product", "7.5", "Server")) == sorted(
+            [1, 3]
+        )
 
     def test_dest_get_archs(self):
         pass
@@ -184,9 +180,7 @@ class TestGetProductListings:
         build = "fake-build-1.0-1.el6"
         with pytest.raises(ProductListingsNotFoundError) as excinfo:
             get_product_listings(db, "fake-label", build)
-        assert f"Could not find any RPMs for build: {build}" == str(
-            excinfo.value
-        )
+        assert f"Could not find any RPMs for build: {build}" == str(excinfo.value)
 
 
 class TestGetModuleProductListings:

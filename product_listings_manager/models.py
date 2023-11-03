@@ -97,9 +97,7 @@ class Products(BaseModel):
     allow_source_only = Column(Boolean)
     module_overrides = relationship("ModuleOverrides", backref="productref")
     overrides = relationship("Overrides", backref="productref")
-    trees = relationship(
-        "Trees", secondary="tree_product_map", backref="products"
-    )
+    trees = relationship("Trees", secondary="tree_product_map", backref="products")
 
     def __repr__(self):
         return "<Product %d %s %s %s %s>" % (
@@ -192,9 +190,7 @@ class MatchVersions(BaseModel):
     product = Column(String(100), primary_key=True)
 
     def __repr__(self):
-        return "<MatchVersion {} {} {}>".format(
-            self.id, self.name, self.product
-        )
+        return f"<MatchVersion {self.id} {self.name} {self.product}>"
 
 
 class Modules(BaseModel):

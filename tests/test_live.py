@@ -51,9 +51,7 @@ class TestGetModuleProductListings:
         label = "RHEL-8.0.0"
         module = "ruby-2.5-820190111110530.9edba152"
         result = get_module_product_listings(db, label, module)
-        expected = {
-            "AppStream-8.0.0": ["aarch64", "ppc64le", "s390x", "x86_64"]
-        }
+        expected = {"AppStream-8.0.0": ["aarch64", "ppc64le", "s390x", "x86_64"]}
         assert result == expected
 
 
