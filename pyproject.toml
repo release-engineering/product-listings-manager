@@ -35,7 +35,7 @@ psycopg2-binary = "^2.9.8"
 koji = "^1.33.1"
 
 gssapi = "^1.8.2"
-python-ldap = "^3.4.3"
+python-ldap = "^3.4.4"
 requests-gssapi = "^1.2.3"
 uvicorn = {extras = ["standard"], version = "^0.23.2"}
 
