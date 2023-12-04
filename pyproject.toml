@@ -28,16 +28,16 @@ flake8 = {version = "^6.1.0", optional = true}
 factory-boy = {version = "^3.3.0", optional = true}
 pytest = {version = "^7.4.3", optional = true}
 pytest-cov = {version = "^4.1.0", optional = true}
-httpx = {version = "^0.25.0", optional = true}
+httpx = {version = "^0.25.2", optional = true}
 
 SQLAlchemy = "^2.0.23"
 psycopg2-binary = "^2.9.8"
 koji = "^1.33.1"
 
 gssapi = "^1.8.2"
-python-ldap = "^3.4.3"
+python-ldap = "^3.4.4"
 requests-gssapi = "^1.2.3"
-uvicorn = {extras = ["standard"], version = "^0.23.2"}
+uvicorn = {extras = ["standard"], version = "^0.24.0"}
 
 [tool.poetry.extras]
 test = [
