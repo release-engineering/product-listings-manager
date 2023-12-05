@@ -66,12 +66,7 @@ class Packages(BaseModel):
     version = Column(String(255), nullable=False)
 
     def __repr__(self):
-        return "<Package %d %s %s %s>" % (
-            self.id,
-            self.name,
-            self.version,
-            self.arch,
-        )
+        return f"<Package {self.id} {self.name} {self.version} {self.arch}>"
 
 
 class TreeProductMap(BaseModel):
@@ -100,12 +95,9 @@ class Products(BaseModel):
     trees = relationship("Trees", secondary="tree_product_map", backref="products")
 
     def __repr__(self):
-        return "<Product %d %s %s %s %s>" % (
-            self.id,
-            self.label,
-            self.version,
-            self.variant,
-            self.allow_source_only,
+        return (
+            f"<Product {self.id} {self.label} {self.version}"
+            f" {self.variant} {self.allow_source_only}>"
         )
 
 
@@ -146,12 +138,7 @@ class Trees(BaseModel):
     modules = relationship("Modules", secondary="tree_modules")
 
     def __repr__(self):
-        return "<Tree %d %s %s %s>" % (
-            self.id,
-            self.name,
-            self.date,
-            self.arch,
-        )
+        return f"<Tree {self.id} {self.name} {self.date} {self.arch}>"
 
 
 class Overrides(BaseModel):
@@ -172,12 +159,9 @@ class Overrides(BaseModel):
     include = Column(Boolean, nullable=False)
 
     def __repr__(self):
-        return "<Overrides {} {} {} {} {}>".format(
-            self.name,
-            self.pkg_arch,
-            self.product_arch,
-            self.product,
-            self.include,
+        return (
+            f"<Overrides {self.name} {self.pkg_arch} {self.product_arch}"
+            f" {self.product} {self.include}>"
         )
 
 
@@ -190,7 +174,7 @@ class MatchVersions(BaseModel):
     product = Column(String(100), primary_key=True)
 
     def __repr__(self):
-        return f"<MatchVersion {self.id} {self.name} {self.product}>"
+        return f"<MatchVersion {self.name} {self.product}>"
 
 
 class Modules(BaseModel):
@@ -204,12 +188,7 @@ class Modules(BaseModel):
     version = Column(String(255), nullable=False)
 
     def __repr__(self):
-        return "<Module %d %s %s %s>" % (
-            self.id,
-            self.name,
-            self.stream,
-            self.version,
-        )
+        return f"<Module {self.id} {self.name} {self.stream} {self.version}>"
 
 
 class ModuleOverrides(BaseModel):
@@ -223,9 +202,7 @@ class ModuleOverrides(BaseModel):
     product_arch = Column(String(32), primary_key=True)
 
     def __repr__(self):
-        return "<ModuleOverrides %s %s %d %s>" % (
-            self.name,
-            self.stream,
-            self.product,
-            self.product_arch,
+        return (
+            f"<ModuleOverrides {self.name} {self.stream} {self.product}"
+            f" {self.product_arch}>"
         )
