@@ -23,7 +23,7 @@ def has_permission(
     permissions: list[Permission],
     ldap_config: LdapConfig,
 ) -> bool:
-    qs = list(q.query for q in queries)
+    qs = [q.query for q in queries]
     qs = [
         q
         for q in qs

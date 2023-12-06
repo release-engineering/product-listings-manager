@@ -126,7 +126,7 @@ class TestProductInfo:
         assert r.json() == [product_version, [p1.variant, p2.variant]]
 
     def test_label_not_found(self, client):
-        msg = "Could not find a product with label: %s" % self.product_label
+        msg = f"Could not find a product with label: {self.product_label}"
         r = client.get(self.path)
         assert r.status_code == 404
         assert msg in r.json().get("message", "")
@@ -340,7 +340,7 @@ class TestLabels:
             "%s: callee=%r, args=%r, kwargs=%r",
             "API call get_product_labels() failed",
             ANY,
-            tuple(),
+            (),
             {},
         )
 
