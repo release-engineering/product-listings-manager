@@ -83,7 +83,7 @@ def get_product_info(db, label):
 
     if not versions:
         raise ProductListingsNotFoundError(
-            "Could not find a product with label: %s" % label
+            f"Could not find a product with label: {label}"
         )
 
     return (
@@ -246,18 +246,18 @@ def get_product_labels(db):
     return [{"label": row.label} for row in rows]
 
 
-def get_product_listings(db, productLabel, buildInfo):
+def get_product_listings(db, product_label, build_info):
     """
     Get a map of which variants of the given product included packages built
     by the given build, and which arches each variant included.
     """
     session = get_koji_session()
-    build = get_build(buildInfo, session)
+    build = get_build(build_info, session)
 
     rpms = session.listRPMs(buildID=build["id"])
     if not rpms:
         raise ProductListingsNotFoundError(
-            "Could not find any RPMs for build: %s" % buildInfo
+            f"Could not find any RPMs for build: {build_info}"
         )
 
     # sort rpms, so first part of list consists of sorted 'normal' rpms and
@@ -267,21 +267,21 @@ def get_product_listings(db, productLabel, buildInfo):
     rpms = sorted(base_rpms, key=lambda x: x["nvr"]) + sorted(
         debuginfos, key=lambda x: x["nvr"]
     )
-    srpm = "%(package_name)s-%(version)s-%(release)s.src.rpm" % build
+    srpm = "{package_name}-{version}-{release}.src.rpm".format(**build)
 
-    prodinfo = get_product_info(db, productLabel)
+    prodinfo = get_product_info(db, product_label)
     version, variants = prodinfo
 
     listings = {}
-    match_version = get_match_versions(db, productLabel)
+    match_version = get_match_versions(db, product_label)
     for variant in variants:
         if variant is None:
             # dict keys must be a string
             variant = ""
-        treelist = precalc_treelist(db, productLabel, version, variant)
+        treelist = precalc_treelist(db, product_label, version, variant)
         if not treelist:
             continue
-        overrides = get_overrides(db, productLabel, version, variant)
+        overrides = get_overrides(db, product_label, version, variant)
         cache_map = {}
         for rpm in rpms:
             if rpm["name"] in match_version:
@@ -346,7 +346,7 @@ def get_product_listings(db, productLabel, buildInfo):
         for variant in list(listings.keys()):
             nvrs = list(listings[variant].keys())
             # BREW-260: Read allow_src_only flag for the product/version
-            allow_src_only = get_srconly_flag(db, productLabel, version)
+            allow_src_only = get_srconly_flag(db, product_label, version)
             if len(nvrs) == 1:
                 maps = list(listings[variant][nvrs[0]].keys())
                 # BREW-260: check for allow_src_only flag added
@@ -355,20 +355,20 @@ def get_product_listings(db, productLabel, buildInfo):
     return listings
 
 
-def get_module_product_listings(db, productLabel, moduleNVR):
+def get_module_product_listings(db, product_label, module_nvr):
     """
     Get a map of which variants of the given product included the given module,
     and which arches each variant included.
     """
-    build = get_build(moduleNVR)
+    build = get_build(module_nvr)
     try:
         module = build["extra"]["typeinfo"]["module"]
         module_name = module["name"]
         module_stream = module["stream"]
     except (KeyError, TypeError):
-        raise ProductListingsNotFoundError("It's not a module build: %s" % moduleNVR)
+        raise ProductListingsNotFoundError(f"This is not a module build: {module_nvr}")
 
-    prodinfo = get_product_info(db, productLabel)
+    prodinfo = get_product_info(db, product_label)
     version, variants = prodinfo
 
     listings = {}
@@ -376,7 +376,7 @@ def get_module_product_listings(db, productLabel, moduleNVR):
         if variant is None:
             # dict keys must be a string
             variant = ""
-        trees = precalc_treelist(db, productLabel, version, variant)
+        trees = precalc_treelist(db, product_label, version, variant)
 
         module_trees = (
             db.query(models.Trees)
@@ -390,7 +390,7 @@ def get_module_product_listings(db, productLabel, moduleNVR):
         )
 
         overrides = get_module_overrides(
-            db, productLabel, version, module_name, module_stream, variant
+            db, product_label, version, module_name, module_stream, variant
         )
 
         archs = sorted(set([arch for (arch,) in module_trees] + overrides))

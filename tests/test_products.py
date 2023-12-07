@@ -190,7 +190,7 @@ class TestGetModuleProductListings:
         nvr = "perl-5.16.3-1.el7"
         with pytest.raises(ProductListingsNotFoundError) as excinfo:
             get_module_product_listings(db, "fake-label", nvr)
-        assert f"It's not a module build: {nvr}" == str(excinfo.value)
+        assert f"This is not a module build: {nvr}" == str(excinfo.value)
 
     @patch("product_listings_manager.products.get_module_overrides")
     @patch("product_listings_manager.products.get_product_info")

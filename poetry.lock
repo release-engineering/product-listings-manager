@@ -1482,5 +1482,5 @@ test = ["flake8", "httpx", "pytest", "pytest-cov"]
 
 [metadata]
 lock-version = "2.0"
-python-versions = ">=3.9,<3.12"
-content-hash = "c59fdfa932d2e0c0bf10fe70f476d5264c801b61aee00bb957bd91cd7777c966"
+python-versions = ">=3.9,<3.13"
+content-hash = "2aaea3ef6de7bc807621b1b27cdec772ef69ca8b4d652e85f120232f303b9476"

@@ -12,8 +12,8 @@ logger = logging.getLogger(__name__)
 # Inspired by https://github.com/mkomitee/flask-kerberos/blob/master/flask_kerberos.py
 # Later cleaned and ported to python-gssapi
 def process_gssapi_request(token):
+    stage = "initialize server context"
     try:
-        stage = "initialize server context"
         sc = gssapi.SecurityContext(usage="accept")
 
         stage = "step context"
@@ -83,5 +83,5 @@ def get_user(request):
     headers = {"WWW-Authenticate": f"Negotiate {token}"}
 
     # remove realm
-    user = user.split("@")[0]
+    user = user.split("@", maxsplit=1)[0]
     return user, headers

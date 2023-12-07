@@ -1,4 +1,4 @@
-FROM registry.fedoraproject.org/fedora:38 as builder
+FROM registry.fedoraproject.org/fedora:39 as builder
 
 # hadolint ignore=DL3033,DL4006,SC2039,SC3040
 RUN set -exo pipefail \

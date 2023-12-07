@@ -40,7 +40,7 @@ if args.server == "brew":
 else:
     import requests
 
-    product_info_path = "/product-info/%s" % args.product
+    product_info_path = f"/product-info/{args.product}"
     product_listings_path = "/product-listings/{}/{}".format(
         args.product,
         args.nvr,
