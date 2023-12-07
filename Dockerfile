@@ -17,7 +17,7 @@ RUN set -exo pipefail \
     # install runtime dependencies
     && yum install -y \
         --installroot=/mnt/rootfs \
-        --releasever=38 \
+        --releasever=39 \
         --setopt install_weak_deps=false \
         --nodocs \
         --disablerepo=* \
@@ -85,6 +85,12 @@ WORKDIR /src
 
 USER 1001
 EXPOSE 8080
+
+# Validate virtual environment
+RUN /src/docker/docker-entrypoint.sh gunicorn --version \
+    && /src/docker/docker-entrypoint.sh python -c \
+      'from product_listings_manager import __version__; print(__version__)'
+
 ENTRYPOINT ["/src/docker/docker-entrypoint.sh"]
 CMD [ \
     "gunicorn", \
