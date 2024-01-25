@@ -10,6 +10,7 @@ These models are not fully relecting the composedb schema:
 """
 import os
 
+from opentelemetry.instrumentation.sqlalchemy import SQLAlchemyInstrumentor
 from sqlalchemy import (
     Boolean,
     Column,
@@ -32,6 +33,8 @@ if DATABASE_URL.startswith("sqlite://"):
     )
 else:
     engine = create_engine(DATABASE_URL)
+
+SQLAlchemyInstrumentor().instrument(engine=engine)
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
