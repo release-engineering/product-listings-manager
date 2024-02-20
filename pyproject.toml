@@ -39,6 +39,11 @@ python-ldap = "^3.4.4"
 requests-gssapi = "^1.2.3"
 uvicorn = {extras = ["standard"], version = "^0.27.0"}
 
+opentelemetry-exporter-otlp-proto-http = "^1.22.0"
+opentelemetry-instrumentation-fastapi = "^0.43b0"
+opentelemetry-instrumentation-requests = "^0.43b0"
+opentelemetry-instrumentation-sqlalchemy = "^0.43b0"
+
 [tool.poetry.extras]
 test = [
     "flake8",

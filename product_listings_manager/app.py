@@ -7,6 +7,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from product_listings_manager import rest_api_v1, root
 from product_listings_manager.middleware import UrlRedirectMiddleware
+from product_listings_manager.tracing import init_tracing
 
 logger = logging.getLogger(__name__)
 
@@ -25,4 +26,5 @@ def create_app():
     app.add_middleware(UrlRedirectMiddleware)
     app.include_router(root.router)
     app.include_router(rest_api_v1.router)
+    init_tracing(app)
     return app

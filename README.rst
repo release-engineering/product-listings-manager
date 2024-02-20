@@ -1,11 +1,8 @@
 product-listings-manager
 ========================
 
-.. image:: https://copr.fedorainfracloud.org/coprs/ktdreyer/product-listings-manager/package/product-listings-manager/status_image/last_build.png
-          :target: https://copr.fedorainfracloud.org/coprs/ktdreyer/product-listings-manager/package/product-listings-manager/
-
-.. image:: https://quay.io/repository/redhat/product-listings-manager/status
-          :target: https://quay.io/repository/redhat/product-listings-manager
+.. image:: https://quay.io/repository/factory2/product-listings-manager/status
+          :target: https://quay.io/repository/factory2/product-listings-manager
 
 .. image:: https://coveralls.io/repos/github/release-engineering/product-listings-manager/badge.svg?branch=master
           :target: https://coveralls.io/github/release-engineering/product-listings-manager?branch=master
@@ -53,80 +50,22 @@ Architecture diagram
     :height: 364px
     :alt: product-listings-manager architecture diagram
 
-Installation and setup
-----------------------
-
-1. Install the prerequisite system packages::
-
-   $ sudo dnf -y install postgresql-devel krb5-devel rpm-devel gcc python-devel python3-virtualenvwrapper
-
-2. Set up a virtualenv::
-
-   $ mkvirtualenv -p python3 plm
-
-  ... Run ``source /usr/bin/virtualenvwrapper.sh`` if ``mkvirtualenv`` command not available
-
-3. Install the prerequisite packages::
-
-   $ workon plm
-   $ pip install -r requirements.txt
-
-4. Create ``config.py`` with the database settings::
-
-   $ echo "SQLALCHEMY_DATABASE_URI = 'postgresql://myusername:mypass@dbhost/dbname'" > config.py
-   $ vi config.py
-
-5. Set the ``PLM_CONFIG_FILE`` environment variable to the full filesystem path of
-   this new file::
-
-   $ export PLM_CONFIG_FILE=$(pwd)/config.py
-
-6. Install brewkoji package. This creates ``/etc/koji.conf.d/brewkoji.conf``,
-   so ``products.py`` can contact the Brew hub::
-
-   $ sudo dnf -y install brewkoji
-
-7. Trust Brew's SSL certificate::
-
-   $ export REQUESTS_CA_BUNDLE=/etc/pki/ca-trust/source/anchors/RH-IT-Root-CA.crt
-
-  ... Or if you've installed this globally on your system, tell requests to use
-  your global CA store::
-
-   $ export REQUESTS_CA_BUNDLE=/etc/pki/tls/certs/ca-bundle.crt
-
-8. Run the server::
-
-   $ FLASK_APP=product_listings_manager.app flask run
-
-The Flask web server will run on TCP 5000.
-
-You can access the http://localhost:5000/ at that point.
-
 Running the tests
 -----------------
-
-Install required packages for test::
-
-   $ pip install -r test-requirements.txt
 
 You can invoke the tests with ``tox``::
 
    $ tox
 
-Alternatively, you can run pytest directly::
-
-   $ pytest --cov=product_listings_manager tests
-
 Using the ``--live`` argument if you want to run against the live composedb instance::
 
-   $ pytest --cov=product_listings_manager --live tests
+   $ tox -e py3 -- --cov=product_listings_manager --live tests
 
 Running the linters
 -------------------
 
 To run viable linters to check syntax of various files before commit, install
-[pre-commit](https://pre-commit.ci/) and run::
+`pre-commit <https://pre-commit.ci/>`__ and run::
 
     $ pre-commit install
 
@@ -135,7 +74,80 @@ run::
 
     $ pre-commit run -a
 
-Configuring a local database
+Setting up local environment
 ----------------------------
 
-See ``database.rst`` for instructions to configure a local postgres instance.
+You can use ``docker-compose`` or ``podman-compose`` to start:
+
+- product-listings-manager - the web service running at ``http://localhost:8080``
+- postgres - database for product-listings-manager, initialized with all
+  ``*.sql`` files in ``docker/docker-entrypoint-initdb.d`` directory
+- jaeger - collector and query service for OpenTelemetry traces collected from
+  the local instance of product-listings-manager and the database, running at
+  ``http://localhost:16686``
+
+Rebuild product-listings-manager image::
+
+    $ podman-compose build
+
+Image rebuild is needed only if dependencies change. The container running in
+the compose environment uses the current source code directory.
+
+Start the services::
+
+    $ podman-compose up
+
+Show logs::
+
+    $ podman-compose logs plm
+    $ podman-compose logs plm-db
+    $ podman-compose logs jaeger
+
+Restart product-listings-manager::
+
+    $ podman-compose restart plm
+
+Stop the services::
+
+    $ podman-compose up
+
+Configuration
+-------------
+
+The service is conteinerized application and uses environment variables for
+configuration:
+
+- ``SQLALCHEMY_DATABASE_URI`` - full database URI for SQLAlchemy, for example:
+  ``postgresql://username:password@plm-db.example.com:5433/plm``
+- ``OTEL_EXPORTER_OTLP_TRACES_ENDPOINT`` - traces endpoint for OpenTelemetry
+  tracing, for example: ``https://otel.example.com/v1/traces``
+- ``OTEL_EXPORTER_SERVICE_NAME`` - service name for OpenTelemetry tracing
+- ``PLM_KOJI_CONFIG_PROFILE`` - Koji profile to use (in ``/etc/koji.conf.d/``
+  directory), default is ``brew``
+- ``PLM_LDAP_HOST`` - LDAP host, for example ``ldaps://ldap.example.com``
+- ``PLM_LDAP_SEARCHES`` - JSON formatted array with LDAP search base and search
+  template, for example:
+
+  .. code-block:: json
+
+      ["BASE": "ou=Groups,dc=example,dc=com", "SEARCH_STRING": "(memberUid={user})"]
+
+- ``PLM_PERMISSIONS`` - JSON formatted array with permissions, for example:
+
+  .. code-block:: json
+
+      [
+        {
+          "name": "admins",
+          "description": "product-listings-manager admins",
+          "contact": "plm-admins@example.com",
+          "queries": ["*"],
+          "groups": ["plm-admins"],
+          "users": ["alice", "bob"]
+        },
+        {
+          "name": "viewers",
+          "queries": ["SELECT *"],
+          "groups": ["plm-users"]
+        }
+      ]

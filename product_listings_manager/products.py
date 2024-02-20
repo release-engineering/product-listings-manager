@@ -3,13 +3,19 @@
 import copy
 import functools
 import logging
+import os
 import re
 
 import koji
+from opentelemetry.instrumentation.requests import RequestsInstrumentor
 
 from product_listings_manager import models
 
 logger = logging.getLogger(__name__)
+
+RequestsInstrumentor().instrument()
+
+KOJI_CONFIG_PROFILE = os.getenv("PLM_KOJI_CONFIG_PROFILE", "brew")
 
 ALL_RELEASE_TYPES = (
     re.compile(r"^TEST\d*", re.I),
@@ -25,7 +31,7 @@ def get_koji_session():
     """
     Get a koji session for accessing kojihub functions.
     """
-    conf = koji.read_config("brew")
+    conf = koji.read_config(KOJI_CONFIG_PROFILE)
     hub = conf["server"]
     return koji.ClientSession(hub, {})
 

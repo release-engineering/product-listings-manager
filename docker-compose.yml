@@ -1,0 +1,49 @@
+---
+version: '3'
+services:
+  plm:
+    build: .
+    image: product-listings-manager
+    user: ${DEV_USER_ID:-1000}
+    working_dir: /src
+    volumes:
+      - ./:/src:ro,z
+      - ./docker/koji.conf.d:/etc/koji.conf.d:ro,z
+    ports:
+      - 127.0.0.1:8080:5000
+    healthcheck:
+      test: >-
+        /src/docker/docker-entrypoint.sh python -c 'import requests;
+        requests.get("http://127.0.0.1:5000/api/v1.0/health").raise_for_status();'
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    environment:
+      - OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://jaeger:4318/v1/traces
+      - OTEL_EXPORTER_SERVICE_NAME=product-listings-manager
+      - PLM_KOJI_CONFIG_PROFILE=fedora
+      - SQLALCHEMY_DATABASE_URI=postgresql://plm:plm@plm-db:5433/plm
+    depends_on:
+      - plm-db
+      - jaeger
+
+  plm-db:
+    image: postgres:14.7-alpine
+    volumes:
+      - ./docker/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d:ro,z
+    restart: always
+    environment:
+      - POSTGRES_USER=plm
+      - POSTGRES_PASSWORD=plm
+      - POSTGRES_DB=plm
+      - PGPORT=5433
+      - POSTGRES_INITDB_ARGS=--auth=ident --auth=trust
+
+  jaeger:
+    image: quay.io/jaegertracing/all-in-one:1.53
+    ports:
+      - 127.0.0.1:16686:16686
+
+networks:
+  default:
+    driver: bridge
