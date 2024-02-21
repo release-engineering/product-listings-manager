@@ -58,6 +58,7 @@ RUN set -ex \
 # --- Final image
 FROM scratch
 ARG GITHUB_SHA
+ARG EXPIRES_AFTER
 LABEL \
     name="product-listings-manager" \
     vendor="product-listings-manager developers" \
@@ -68,7 +69,8 @@ LABEL \
     url="https://github.com/release-engineering/product-listings-manager" \
     vcs-type="git" \
     vcs-ref=$GITHUB_SHA \
-    io.k8s.display-name="Product Listings Manager"
+    io.k8s.display-name="Product Listings Manager" \
+    quay.expires-after=$EXPIRES_AFTER
 
 ENV \
     PYTHONFAULTHANDLER=1 \
