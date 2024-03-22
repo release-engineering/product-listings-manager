@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: GPL-2.0+
 """Helper function for managing raw SQL queries"""
+
 import logging
 from typing import Any
 

@@ -8,6 +8,7 @@ These models are not fully relecting the composedb schema:
   it), in case of testing with other db backend(e.g. sqlite) a value is given
   in following definition and it has no side effect to postgresql(composedb).
 """
+
 import os
 
 from opentelemetry.instrumentation.sqlalchemy import SQLAlchemyInstrumentor
