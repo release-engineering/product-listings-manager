@@ -122,7 +122,7 @@ jobs:
           containerfiles: Dockerfile
           build-args: |
             GITHUB_SHA=${{ github.sha }}
-            EXPIRES_AFTER=${{ github.ref == 'refs/heads/develop' && 'never' || '30d' }}
+            EXPIRES_AFTER=${{ github.ref == 'refs/heads/master' && 'never' || '30d' }}
 
       - name: Log in to the image registry
         if: github.event_name == 'push' && github.actor != 'dependabot[bot]'
