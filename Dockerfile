@@ -17,7 +17,7 @@ RUN set -exo pipefail \
     # install runtime dependencies
     && yum install -y \
         --installroot=/mnt/rootfs \
-        --releasever=39 \
+        --releasever=/ \
         --setopt install_weak_deps=false \
         --nodocs \
         --disablerepo=* \

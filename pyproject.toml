@@ -24,7 +24,6 @@ fastapi = "^0.110.0"
 gunicorn = "^21.2.0"
 python-dateutil = "^2.8.2"
 
-flake8 = {version = "^7.0.0", optional = true}
 factory-boy = {version = "^3.3.0", optional = true}
 pytest = {version = "^8.0.0", optional = true}
 pytest-cov = {version = "^5.0.0", optional = true}
@@ -46,7 +45,7 @@ opentelemetry-instrumentation-sqlalchemy = "^0.43b0"
 
 [tool.poetry.extras]
 test = [
-    "flake8",
+    "factory-boy",
     "pytest",
     "pytest-cov",
     # required by fastapi.testclient

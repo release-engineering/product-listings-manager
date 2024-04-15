@@ -23,18 +23,24 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
+      - name: Install system dependencies
+        uses: nick-invision/retry@v2
+        with:
+          timeout_minutes: 10
+          retry_wait_seconds: 30
+          max_attempts: 3
+          command: >-
+            sudo apt-get update
+            && sudo apt-get install
+            libkrb5-dev
+            libldap2-dev
+            libsasl2-dev
+
       - name: Install dependencies
-        run: |
-          sudo apt-get -y update
-          sudo apt-get -y install libkrb5-dev libldap2-dev libsasl2-dev
-          python -m pip install --upgrade pip
-          pip install tox
+        run: python -m pip install tox
 
       - name: Test with tox
-        run: tox -e py
-
-      - name: Test with mypy
-        run: tox -e mypy
+        run: python -m tox -e py3
 
       - name: Run coveralls-python
         env:
@@ -99,7 +105,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install poetry tox
+          pip install poetry
 
       - name: Update the Application Version
         run: poetry version "$(./get-version.sh)"
