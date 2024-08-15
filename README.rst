@@ -130,7 +130,7 @@ configuration:
 
   .. code-block:: json
 
-      ["BASE": "ou=Groups,dc=example,dc=com", "SEARCH_STRING": "(memberUid={user})"]
+      [{"BASE": "ou=Groups,dc=example,dc=com", "SEARCH_STRING": "(memberUid={user})"}]
 
 - ``PLM_PERMISSIONS`` - JSON formatted array with permissions, for example:
 
@@ -151,3 +151,10 @@ configuration:
           "groups": ["plm-users"]
         }
       ]
+
+- ``PLM_RESPONSE_HEADERS`` - JSON formatted object with additional headers to
+  add to responses; the default is:
+
+  .. code-block:: json
+
+      {"Strict-Transport-Security": "max-age=31536000; includeSubDomains"}

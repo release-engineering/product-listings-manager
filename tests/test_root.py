@@ -13,3 +13,10 @@ class TestRoot:
         }
         assert r.status_code == 200
         assert r.json() == expected_json
+
+    def test_strict_trasport_security(self, client):
+        r = client.get("/")
+        sts = r.headers.get("Strict-Transport-Security")
+        assert sts, r.headers
+        assert "max-age" in sts
+        assert "includeSubDomains" in sts
