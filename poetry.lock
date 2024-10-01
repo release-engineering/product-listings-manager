@@ -681,14 +681,14 @@ files = [
 
 [[package]]
 name = "koji"
-version = "1.34.2"
+version = "1.35.0"
 description = "Koji is a system for building and tracking RPMS. The base package contains shared libraries and the command-line interface."
 optional = false
 python-versions = ">=2.7"
 files = [
-    {file = "koji-1.34.2-py2-none-any.whl", hash = "sha256:4c4a2840b5209f81d656d269f81a582899a0d2978c47ef35575082f7e72afae7"},
-    {file = "koji-1.34.2-py3-none-any.whl", hash = "sha256:2965b0a6a680779cdbc8dff5b19b2bdbd0e925bd4f848b40bee18078b00c4c59"},
-    {file = "koji-1.34.2.tar.gz", hash = "sha256:9a273a6980b17c7def5cc906a2bb684a331d5478782c2d8e0594fa9bc688dead"},
+    {file = "koji-1.35.0-py2-none-any.whl", hash = "sha256:56615a1af842bae2c151b78840ce75848bbb4143cd1851e7cf7430be2ee59179"},
+    {file = "koji-1.35.0-py3-none-any.whl", hash = "sha256:22d4b971d122b606d99160ca20dbddc97b6cb2f1b883699f84bac1e7bb18a5b8"},
+    {file = "koji-1.35.0.tar.gz", hash = "sha256:72137a841d70dddc872091af5760b5236d4aeb956e88c5d33d80467cadfdc475"},
 ]
 
 [package.dependencies]
@@ -1912,4 +1912,4 @@ test = ["factory-boy", "httpx", "pytest", "pytest-cov"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<3.13"
-content-hash = "ed20a155965b872602d4878f740c3dc3645b68625f49eb98861656b18ddc6616"
+content-hash = "b54b6e1c028278845918d390a4850c6ca61b282be8f4367917d7882126a8c1af"
