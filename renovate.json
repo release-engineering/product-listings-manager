@@ -1,0 +1,36 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:best-practices",
+    ":enablePreCommit",
+    "group:all",
+    "workarounds:supportRedHatImageVersion",
+    ":gitSignOff",
+    "schedule:weekly"
+  ],
+  "packageRules": [
+    {
+      "description": "Patch and digest updates",
+      "matchUpdateTypes": [
+        "patch",
+        "digest"
+      ],
+      "groupName": "Auto merged updates",
+      "automerge": true,
+      "platformAutomerge": true
+    },
+    {
+      "description": "pre-commit-renovate plugin",
+      "matchPackageNames": [
+        "maxbrunet/pre-commit-renovate"
+      ],
+      "groupName": "Auto merged updates",
+      "automerge": true,
+      "platformAutomerge": true
+    },
+  ],
+  "vulnerabilityAlerts": {
+    "vulnerabilityFixStrategy": "highest"
+  },
+  "configMigration": true
+}
