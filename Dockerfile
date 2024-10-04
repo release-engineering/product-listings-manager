@@ -1,19 +1,11 @@
-FROM registry.fedoraproject.org/fedora:39 as builder
+FROM quay.io/fedora/python-312:20241002@sha256:b407d0bc8078b1adcb03ea97911ed545197656d6b5990c0358b42cd31401ba2f AS builder
+
+# builder should use root to install/create all files
+USER root
 
 # hadolint ignore=DL3033,DL4006,SC2039,SC3040
 RUN set -exo pipefail \
     && mkdir -p /mnt/rootfs \
-    # install builder dependencies
-    && yum install -y \
-        --setopt install_weak_deps=false \
-        --nodocs \
-        --disablerepo=* \
-        --enablerepo=fedora,updates \
-        gcc \
-        krb5-devel \
-        openldap-devel \
-        python3 \
-        python3-devel \
     # install runtime dependencies
     && yum install -y \
         --installroot=/mnt/rootfs \
@@ -28,7 +20,7 @@ RUN set -exo pipefail \
     && yum --installroot=/mnt/rootfs clean all \
     && rm -rf /mnt/rootfs/var/cache/* /mnt/rootfs/var/log/dnf* /mnt/rootfs/var/log/yum.* \
     # https://python-poetry.org/docs/master/#installing-with-the-official-installer
-    && curl -sSL https://install.python-poetry.org | python3 - \
+    && curl -sSL --proto "=https" https://install.python-poetry.org | python3 - \
     && python3 -m venv /venv
 
 ENV \
@@ -40,20 +32,32 @@ ENV \
     PYTHONUNBUFFERED=1
 
 WORKDIR /build
-COPY . .
+
+# Copy only specific files to avoid accidentally including any generated files
+# or secrets.
+COPY product_listings_manager ./product_listings_manager
+COPY \
+    pyproject.toml \
+    poetry.lock \
+    README.rst \
+    docker/docker-entrypoint.sh \
+    docker/logging.ini \
+    ./
 # hadolint ignore=SC1091
 RUN set -ex \
-    && export PATH=/root/.local/bin:$PATH \
+    && export PATH=/root/.local/bin:"$PATH" \
     && . /venv/bin/activate \
-    && pip install --no-cache-dir -r requirements.txt \
     && poetry build --format=wheel \
     && version=$(poetry version --short) \
     && pip install --no-cache-dir dist/product_listings_manager-"$version"-py3*.whl \
     && deactivate \
     && mv /venv /mnt/rootfs \
     && mkdir -p /mnt/rootfs/src/docker \
-    && cp -v docker/docker-entrypoint.sh /mnt/rootfs/src/docker \
-    && cp -v docker/logging.ini /mnt/rootfs/src/docker
+    && cp -v docker-entrypoint.sh /mnt/rootfs/src/docker \
+    && cp -v logging.ini /mnt/rootfs/src/docker
+
+# This is just to satisfy linters
+USER 1001
 
 # --- Final image
 FROM scratch
