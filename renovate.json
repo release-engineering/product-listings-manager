@@ -27,7 +27,7 @@
       "groupName": "Auto merged updates",
       "automerge": true,
       "platformAutomerge": true
-    },
+    }
   ],
   "vulnerabilityAlerts": {
     "vulnerabilityFixStrategy": "highest"
