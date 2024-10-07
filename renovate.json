@@ -29,8 +29,5 @@
       "platformAutomerge": true
     }
   ],
-  "vulnerabilityAlerts": {
-    "vulnerabilityFixStrategy": "highest"
-  },
   "configMigration": true
 }
