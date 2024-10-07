@@ -4,8 +4,8 @@
     "config:best-practices",
     ":enablePreCommit",
     "group:all",
-    "workarounds:supportRedHatImageVersion",
     ":gitSignOff",
+    ":disableDependencyDashboard",
     "schedule:weekly"
   ],
   "packageRules": [
