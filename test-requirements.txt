@@ -1,9 +1,0 @@
-# Packages required for test
-
-black
-factory-boy
-flake8
-mock
-pytest
-pytest-cov
-tox
