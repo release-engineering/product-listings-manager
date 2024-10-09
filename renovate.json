@@ -18,15 +18,6 @@
       "groupName": "Auto merged updates",
       "automerge": true,
       "platformAutomerge": true
-    },
-    {
-      "description": "pre-commit-renovate plugin",
-      "matchPackageNames": [
-        "maxbrunet/pre-commit-renovate"
-      ],
-      "groupName": "Auto merged updates",
-      "automerge": true,
-      "platformAutomerge": true
     }
   ],
   "configMigration": true
