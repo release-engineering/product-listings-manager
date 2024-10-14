@@ -371,18 +371,18 @@ typing-extensions = "*"
 
 [[package]]
 name = "fastapi"
-version = "0.115.0"
+version = "0.115.2"
 description = "FastAPI framework, high performance, easy to learn, fast to code, ready for production"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "fastapi-0.115.0-py3-none-any.whl", hash = "sha256:17ea427674467486e997206a5ab25760f6b09e069f099b96f5b55a32fb6f1631"},
-    {file = "fastapi-0.115.0.tar.gz", hash = "sha256:f93b4ca3529a8ebc6fc3fcf710e5efa8de3df9b41570958abf1d97d843138004"},
+    {file = "fastapi-0.115.2-py3-none-any.whl", hash = "sha256:61704c71286579cc5a598763905928f24ee98bfcc07aabe84cfefb98812bbc86"},
+    {file = "fastapi-0.115.2.tar.gz", hash = "sha256:3995739e0b09fa12f984bce8fa9ae197b35d433750d3d312422d846e283697ee"},
 ]
 
 [package.dependencies]
 pydantic = ">=1.7.4,<1.8 || >1.8,<1.8.1 || >1.8.1,<2.0.0 || >2.0.0,<2.0.1 || >2.0.1,<2.1.0 || >2.1.0,<3.0.0"
-starlette = ">=0.37.2,<0.39.0"
+starlette = ">=0.37.2,<0.41.0"
 typing-extensions = ">=4.8.0"
 
 [package.extras]
@@ -701,14 +701,14 @@ files = [
 
 [[package]]
 name = "koji"
-version = "1.35.0"
+version = "1.35.1"
 description = "Koji is a system for building and tracking RPMS. The base package contains shared libraries and the command-line interface."
 optional = false
 python-versions = ">=2.7"
 files = [
-    {file = "koji-1.35.0-py2-none-any.whl", hash = "sha256:56615a1af842bae2c151b78840ce75848bbb4143cd1851e7cf7430be2ee59179"},
-    {file = "koji-1.35.0-py3-none-any.whl", hash = "sha256:22d4b971d122b606d99160ca20dbddc97b6cb2f1b883699f84bac1e7bb18a5b8"},
-    {file = "koji-1.35.0.tar.gz", hash = "sha256:72137a841d70dddc872091af5760b5236d4aeb956e88c5d33d80467cadfdc475"},
+    {file = "koji-1.35.1-py2-none-any.whl", hash = "sha256:0302a5c12173938f88edc02dbd1fb55631454ccd3c6543446edc83befb89d3e1"},
+    {file = "koji-1.35.1-py3-none-any.whl", hash = "sha256:8321c22920029ca2e8cf6f38eed087e2af947f40fece50aba7f0d52defd1636f"},
+    {file = "koji-1.35.1.tar.gz", hash = "sha256:916e7dd68e14980ed7245cbd700b74e79e913cfd4f250367307a8fce866381c6"},
 ]
 
 [package.dependencies]
