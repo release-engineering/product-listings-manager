@@ -28,7 +28,7 @@ services:
       - jaeger
 
   plm-db:
-    image: postgres:14.7-alpine
+    image: postgres:17.0-alpine@sha256:14195b0729fce792f47ae3c3704d6fd04305826d57af3b01d5b4d004667df174
     volumes:
       - ./docker/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d:ro,z
     restart: always
@@ -40,7 +40,7 @@ services:
       - POSTGRES_INITDB_ARGS=--auth=ident --auth=trust
 
   jaeger:
-    image: quay.io/jaegertracing/all-in-one:1.53
+    image: quay.io/jaegertracing/all-in-one:1.60@sha256:4fd2d70fa347d6a47e79fcb06b1c177e6079f92cba88b083153d56263082135e
     ports:
       - 127.0.0.1:16686:16686
 
