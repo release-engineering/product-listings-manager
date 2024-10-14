@@ -20,5 +20,8 @@
       "platformAutomerge": true
     }
   ],
+  "constraints": {
+    "python": ">=3.9,<3.14"
+  },
   "configMigration": true
 }
