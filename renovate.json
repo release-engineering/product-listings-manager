@@ -12,6 +12,8 @@
     {
       "description": "Patch and digest updates",
       "matchUpdateTypes": [
+        "major",
+        "minor",
         "patch",
         "digest"
       ],
