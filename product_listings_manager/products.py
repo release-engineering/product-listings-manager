@@ -16,6 +16,9 @@ logger = logging.getLogger(__name__)
 RequestsInstrumentor().instrument()
 
 KOJI_CONFIG_PROFILE = os.getenv("PLM_KOJI_CONFIG_PROFILE", "brew")
+VARIANTS_WITHOUT_FAST_SLOW_DEBUGINFO = os.getenv(
+    "PLM_VARIANTS_WITHOUT_FAST_SLOW_DEBUGINFO", "AppStream"
+).split(",")
 
 ALL_RELEASE_TYPES = (
     re.compile(r"^TEST\d*", re.I),
@@ -25,6 +28,13 @@ ALL_RELEASE_TYPES = (
     re.compile(r"^GOLD", re.I),
     re.compile(r"^U\d+(-beta)?$", re.I),
 )
+
+
+def is_fast_slow_debuginfo(rpm_name: str) -> bool:
+    return any(
+        rpm_name.endswith(suffix)
+        for suffix in ("-fastdebug-debuginfo", "-slowdebug-debuginfo")
+    )
 
 
 def get_koji_session():
@@ -324,6 +334,10 @@ def get_product_listings(db, product_label, build_info):
 
         # debuginfo only
         rpms_debug = [rpm for rpm in rpms if koji.is_debuginfo(rpm["name"])]
+        if variant in VARIANTS_WITHOUT_FAST_SLOW_DEBUGINFO:
+            rpms_debug = [
+                rpm for rpm in rpms_debug if not is_fast_slow_debuginfo(rpm["name"])
+            ]
         d = {}
         all_archs = {rpm["arch"] for rpm in rpms_debug}
         for arch in all_archs:

@@ -180,6 +180,16 @@ class TestProductListings:
             },
             {"arch": "x86_64", "name": self.pkg_name, "nvr": self.nvr},
             {"arch": "src", "name": self.pkg_name, "nvr": self.nvr},
+            {
+                "arch": "x86_64",
+                "name": f"{self.pkg_name}-fastdebug-debuginfo",
+                "nvr": f"{self.pkg_name}-fastdebug-debuginfo-{self.pkg_version}-{self.pkg_release}",
+            },
+            {
+                "arch": "x86_64",
+                "name": f"{self.pkg_name}-slowdebug-debuginfo",
+                "nvr": f"{self.pkg_name}-slowdebug-debuginfo-{self.pkg_version}-{self.pkg_release}",
+            },
         ]
 
         # Create products, trees, packages records in db
@@ -197,7 +207,12 @@ class TestProductListings:
         t.packages.append(pkg_src)
         TreesFactory._meta.sqlalchemy_session.commit()
 
-        r = client.get(self.path)
+        with patch(
+            "product_listings_manager.products.VARIANTS_WITHOUT_FAST_SLOW_DEBUGINFO",
+            variant,
+        ):
+            r = client.get(self.path)
+
         assert r.status_code == 200
         assert r.json() == {
             variant: {
