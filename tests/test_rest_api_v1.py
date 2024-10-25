@@ -10,6 +10,7 @@ from product_listings_manager.models import get_db
 
 from .factories import (
     ModulesFactory,
+    OverridesFactory,
     PackagesFactory,
     ProductsFactory,
     TreesFactory,
@@ -198,7 +199,7 @@ class TestProductListings:
         TreesFactory._meta.sqlalchemy_session.commit()
 
         r = client.get(self.path)
-        assert r.status_code == 200
+        assert r.status_code == 200, r.text
         assert r.json() == {
             variant: {
                 self.nvr: {"x86_64": ["x86_64"], "src": ["x86_64"]},
@@ -274,6 +275,70 @@ class TestProductListings:
         r = client.get(self.path)
         assert r.status_code == 404
         assert r.json() == {"message": error}
+
+    def test_get_product_listing_overrides(self, mock_koji_session, client):
+        self.pkg_name = "dumb-1.2-fastdebug-debuginfo"
+        mock_koji_session.getBuild.return_value = {
+            "id": 1,
+            "package_name": self.pkg_name,
+            "version": self.pkg_version,
+            "release": self.pkg_release,
+        }
+
+        mock_koji_session.listRPMs.return_value = [
+            {"arch": "x86_64", "name": self.pkg_name, "nvr": self.nvr},
+            {"arch": "src", "name": self.pkg_name, "nvr": self.nvr},
+        ]
+
+        variant = "EXTRAS-6"
+        p = ProductsFactory(label=self.product_label, variant=variant)
+        for arch in ("x86_64", "src"):
+            t = TreesFactory(arch=arch)
+            t.products.append(p)
+            pkg = PackagesFactory(
+                name=self.pkg_name, version=self.pkg_version, arch=arch
+            )
+            t.packages.append(pkg)
+        TreesFactory._meta.sqlalchemy_session.commit()
+
+        r = client.get(self.path)
+        assert r.status_code == 200, r.text
+        assert r.json() == {
+            variant: {
+                self.nvr: {"x86_64": ["x86_64"], "src": ["src"]},
+            }
+        }
+
+        o = OverridesFactory(
+            name=self.pkg_name,
+            pkg_arch="src",
+            product_arch="src",
+            product=p.id,
+            include=False,
+        )
+        p.overrides.append(o)
+        ProductsFactory._meta.sqlalchemy_session.commit()
+
+        r = client.get(self.path)
+        assert r.status_code == 200, r.text
+        assert r.json() == {
+            variant: {
+                self.nvr: {"x86_64": ["x86_64"]},
+            }
+        }
+
+        o.include = True
+        o.pkg_arch = "src"
+        o.product_arch = "x86_64"
+        OverridesFactory._meta.sqlalchemy_session.commit()
+
+        r = client.get(self.path)
+        assert r.status_code == 200, r.text
+        assert r.json() == {
+            variant: {
+                self.nvr: {"x86_64": ["x86_64"], "src": ["src", "x86_64"]},
+            }
+        }
 
 
 class TestModuleProductListings:

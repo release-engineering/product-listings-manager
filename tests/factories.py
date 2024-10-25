@@ -6,6 +6,7 @@ from factory.fuzzy import FuzzyNaiveDateTime, FuzzyText
 from product_listings_manager.models import (
     BaseModel,
     Modules,
+    Overrides,
     Packages,
     Products,
     SessionLocal,
@@ -16,12 +17,14 @@ from product_listings_manager.models import (
 BaseModel.metadata.create_all(bind=engine)
 
 
-class BaseFactoryWithID(factory.alchemy.SQLAlchemyModelFactory):
+class BaseFactory(factory.alchemy.SQLAlchemyModelFactory):
     class Meta:
         abstract = True
         sqlalchemy_session = SessionLocal()
         sqlalchemy_session_persistence = "commit"
 
+
+class BaseFactoryWithID(BaseFactory):
     id = factory.Sequence(lambda n: n)
 
 
@@ -63,3 +66,14 @@ class ModulesFactory(BaseFactoryWithID):
     name = FuzzyText()
     stream = FuzzyText()
     version = FuzzyText()
+
+
+class OverridesFactory(BaseFactory):
+    class Meta:
+        model = Overrides
+
+    name = FuzzyText()
+    pkg_arch = FuzzyText()
+    product_arch = FuzzyText()
+    product = None
+    include = False
