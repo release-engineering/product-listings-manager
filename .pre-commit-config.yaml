@@ -64,12 +64,12 @@ repos:
 
   # Dockerfile linter
   - repo: https://github.com/hadolint/hadolint
-    rev: v2.13.0-beta
+    rev: v2.13.1-beta
     hooks:
       - id: hadolint-docker
 
   # renovate.json validator
   - repo: https://github.com/renovatebot/pre-commit-hooks
-    rev: 38.142.5
+    rev: 39.0.0
     hooks:
       - id: renovate-config-validator
