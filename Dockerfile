@@ -1,15 +1,15 @@
-FROM quay.io/fedora/python-312:20241106@sha256:5452f22b1876810fb870bdf011a4d092c9006b7d165a45c3c453b9bc3127ad17 AS builder
+FROM quay.io/fedora/python-313:20241120@sha256:8c0c6ddd165c6771ed1ce79ae0f02d6f31de16a7e3fcad8f8048c5c2847f68e0 AS builder
 
 # builder should use root to install/create all files
 USER root
 
-# hadolint ignore=DL3033,DL4006,SC2039,SC3040
+# hadolint ignore=DL3033,DL3041,DL4006,SC2039,SC3040
 RUN set -exo pipefail \
     && mkdir -p /mnt/rootfs \
     # install runtime dependencies
-    && yum install -y \
+    && dnf install -y \
         --installroot=/mnt/rootfs \
-        --releasever=/ \
+        --use-host-config \
         --setopt install_weak_deps=false \
         --nodocs \
         --disablerepo=* \
@@ -17,8 +17,7 @@ RUN set -exo pipefail \
         krb5-libs \
         openldap \
         python3 \
-    && yum --installroot=/mnt/rootfs clean all \
-    && rm -rf /mnt/rootfs/var/cache/* /mnt/rootfs/var/log/dnf* /mnt/rootfs/var/log/yum.* \
+    && dnf --installroot=/mnt/rootfs clean all \
     # https://python-poetry.org/docs/master/#installing-with-the-official-installer
     && curl -sSL --proto "=https" https://install.python-poetry.org | python3 - \
     && python3 -m venv /venv
