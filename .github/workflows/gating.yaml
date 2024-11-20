@@ -17,7 +17,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5
         with:
-          python-version: "3.12"
+          python-version: "3.13"
 
       - name: Install system dependencies
         uses: nick-invision/retry@7152eba30c6575329ac0576536151aca5a72780e # v3
@@ -78,7 +78,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5
         with:
-          python-version: "3.12"
+          python-version: "3.13"
 
       - name: Install dependencies
         run: |
