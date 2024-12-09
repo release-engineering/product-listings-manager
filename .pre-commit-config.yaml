@@ -43,7 +43,7 @@ repos:
 
   # Linter and formatter
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.8.1
+    rev: v0.8.2
     hooks:
       - id: ruff
         args:
@@ -73,6 +73,6 @@ repos:
 
   # renovate.json validator
   - repo: https://github.com/renovatebot/pre-commit-hooks
-    rev: 39.46.1
+    rev: 39.57.4
     hooks:
       - id: renovate-config-validator
