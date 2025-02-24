@@ -748,15 +748,15 @@ files = [
 
 [[package]]
 name = "koji"
-version = "1.35.1"
+version = "1.35.2"
 description = "Koji is a system for building and tracking RPMS. The base package contains shared libraries and the command-line interface."
 optional = false
 python-versions = ">=2.7"
 groups = ["main"]
 files = [
-    {file = "koji-1.35.1-py2-none-any.whl", hash = "sha256:0302a5c12173938f88edc02dbd1fb55631454ccd3c6543446edc83befb89d3e1"},
-    {file = "koji-1.35.1-py3-none-any.whl", hash = "sha256:8321c22920029ca2e8cf6f38eed087e2af947f40fece50aba7f0d52defd1636f"},
-    {file = "koji-1.35.1.tar.gz", hash = "sha256:916e7dd68e14980ed7245cbd700b74e79e913cfd4f250367307a8fce866381c6"},
+    {file = "koji-1.35.2-py2-none-any.whl", hash = "sha256:0ece53247064c6c1c772527c74176dd07a67dd78465ddd1c7bf2170f6f673244"},
+    {file = "koji-1.35.2-py3-none-any.whl", hash = "sha256:9bb18a407a1cfda68d378384d3e4c48bbb361cd029e1f614b36f6da02e489e3e"},
+    {file = "koji-1.35.2.tar.gz", hash = "sha256:95685007fff8dda4a32231ace6e4d80f2294ad37f89862f9de77dfead8da08aa"},
 ]
 
 [package.dependencies]
