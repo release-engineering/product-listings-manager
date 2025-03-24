@@ -18,12 +18,12 @@ RequestsInstrumentor().instrument()
 KOJI_CONFIG_PROFILE = os.getenv("PLM_KOJI_CONFIG_PROFILE", "brew")
 
 ALL_RELEASE_TYPES = (
-    re.compile(r"^TEST\d*", re.I),
-    re.compile(r"^ALPHA\d*", re.I),
-    re.compile(r"^BETA\d*", re.I),
-    re.compile(r"^RC\d*", re.I),
-    re.compile(r"^GOLD", re.I),
-    re.compile(r"^U\d+(-beta)?$", re.I),
+    re.compile(r"^TEST\d*", re.IGNORECASE),
+    re.compile(r"^ALPHA\d*", re.IGNORECASE),
+    re.compile(r"^BETA\d*", re.IGNORECASE),
+    re.compile(r"^RC\d*", re.IGNORECASE),
+    re.compile(r"^GOLD", re.IGNORECASE),
+    re.compile(r"^U\d+(-beta)?$", re.IGNORECASE),
 )
 
 

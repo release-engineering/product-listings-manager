@@ -41,10 +41,7 @@ else:
     import requests
 
     product_info_path = f"/product-info/{args.product}"
-    product_listings_path = "/product-listings/{}/{}".format(
-        args.product,
-        args.nvr,
-    )
+    product_listings_path = f"/product-listings/{args.product}/{args.nvr}"
 
     for path in (product_info_path, product_listings_path):
         result = requests.get(url + path, timeout=30)

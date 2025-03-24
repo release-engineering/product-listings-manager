@@ -164,9 +164,7 @@ class TestProductListings:
 
         # mock result of koji listRPMs() API
         debuginfo_pkg_name = f"{self.pkg_name}-debuginfo"
-        debuginfo_nvr = "{}-{}-{}".format(
-            debuginfo_pkg_name, self.pkg_version, self.pkg_release
-        )
+        debuginfo_nvr = f"{debuginfo_pkg_name}-{self.pkg_version}-{self.pkg_release}"
         mock_koji_session.listRPMs.return_value = [
             {
                 "arch": "s390x",

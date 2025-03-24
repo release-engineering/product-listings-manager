@@ -41,8 +41,8 @@ class ProductsFactory(BaseFactoryWithID):
     class Meta:
         model = Products
 
-    label = factory.Sequence(lambda n: "Label-%d" % n)
-    version = factory.Sequence(lambda n: "V%d" % n)
+    label = factory.Sequence(lambda n: f"Label-{n}")
+    version = factory.Sequence(lambda n: f"V{n}")
     variant = FuzzyText()
     allow_source_only = False
 
