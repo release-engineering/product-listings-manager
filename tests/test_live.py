@@ -47,7 +47,7 @@ class TestGetProductListings:
 
 @pytest.mark.live
 class TestGetModuleProductListings:
-    def test_getModuleProductListings(self, app, db):
+    def test_get(self, app, db):
         label = "RHEL-8.0.0"
         module = "ruby-2.5-820190111110530.9edba152"
         result = get_module_product_listings(db, label, module)
@@ -57,7 +57,7 @@ class TestGetModuleProductListings:
 
 @pytest.mark.live
 class TestProductLabels:
-    def test_getProductLabels(self, app, db):
+    def test_get(self, app, db):
         result = get_product_labels(db)
         assert len(result) > 1200
         assert {"label": "RHEL-6"} in result
