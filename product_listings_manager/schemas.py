@@ -68,6 +68,10 @@ class Message(BaseModel):
     message: str
 
 
+class HealthOkMessage(BaseModel):
+    message: str = Field("It works!")
+
+
 class LoginInfo(BaseModel):
     user: str
     groups: list[str]

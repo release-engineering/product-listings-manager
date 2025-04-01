@@ -18,6 +18,7 @@ from product_listings_manager.models import get_db
 from product_listings_manager.permissions import has_permission
 from product_listings_manager.schemas import (
     SQL_QUERY_EXAMPLES,
+    HealthOkMessage,
     LoginInfo,
     Message,
     Permission,
@@ -27,8 +28,6 @@ from product_listings_manager.schemas import (
 router = APIRouter(prefix="/api/v1.0")
 
 logger = logging.getLogger(__name__)
-
-HEALTH_OK_MESSAGE = "It works!"
 
 
 def ldap_config() -> LdapConfig:
@@ -94,7 +93,7 @@ def about():
 @router.get(
     "/health",
     responses={
-        200: {"model": Message(message=HEALTH_OK_MESSAGE)},
+        200: {"model": HealthOkMessage},
         503: {"model": Message},
     },
 )
@@ -128,7 +127,7 @@ def health(db: Session = Depends(get_db)):
             detail=f"Koji Error: {e}",
         )
 
-    return Message(message=HEALTH_OK_MESSAGE)
+    return HealthOkMessage()
 
 
 @router.get("/login", responses={401: {}})
