@@ -28,7 +28,7 @@ services:
       - jaeger
 
   plm-db:
-    image: postgres:17.5-alpine@sha256:fbe21607052bb5c298674f2fd8cf044a63aa3ddf50b81627f894f91f40f50bcb
+    image: postgres:17.5-alpine@sha256:6567bca8d7bc8c82c5922425a0baee57be8402df92bae5eacad5f01ae9544daa
     volumes:
       - ./docker/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d:ro,z
     restart: always
