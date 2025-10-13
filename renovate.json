@@ -20,6 +20,10 @@
       "groupName": "all dependencies",
       "automerge": true,
       "platformAutomerge": true
+    },
+    {
+      "matchDepTypes": ["requires-python"],
+      "enabled": false
     }
   ],
   "constraints": {
