@@ -14,10 +14,11 @@ jobs:
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
 
-      - name: Set up Python
-        uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c # v6
+      - name: Install uv
+        uses: astral-sh/setup-uv@3259c6206f993105e3a61b142c2d97bf4b9ef83d # v7
         with:
           python-version: "3.13"
+          enable-cache: true
 
       - name: Install system dependencies
         uses: nick-invision/retry@ce71cc2ab81d554ebbe88c79ab5975992d79ba08 # v3
@@ -32,22 +33,21 @@ jobs:
             libldap2-dev
             libsasl2-dev
 
-      - name: Install dependencies
-        run: python -m pip install tox
-
       - name: Test with tox
-        run: python -m tox -e py3
+        run: uvx --with tox-uv tox -e py3
 
-      - name: Run coveralls-python
+      - name: Collect coverage with Coveralls
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           COVERALLS_PARALLEL: true
         run: |
-          python -m pip install --upgrade pip
-          python -m pip install --upgrade setuptools
-          python -m pip install --upgrade coveralls
-          coveralls --service=github
-          coveralls --finish --service=github
+          uvx --with coveralls coveralls --service=github
+
+      - name: Upload coverage to Coveralls
+        run: |
+          uvx --with coveralls coveralls --finish --service=github
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   hadolint:
     name: Hadolint
@@ -75,24 +75,15 @@ jobs:
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
 
-      - name: Set up Python
-        uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c # v6
-        with:
-          python-version: "3.13"
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install poetry
-
       - name: Update the Application Version
-        run: poetry version "$(./get-version.sh)"
+        run: |
+          NEW_VERSION=$(./get-version.sh)
+          sed -i "s/^version = .*/version = \"$NEW_VERSION\"/" pyproject.toml
 
       - name: Get image tag from git branch
-        id: get-image-tag
         run: |
           export TAG=$(sed 's/[^0-9a-zA-Z_.-]/__/g' <<< "$GITHUB_REF_NAME") &&
-          echo "::set-output name=tag::$TAG"
+          echo "VERSION_TAG=$TAG" >> $GITHUB_ENV
 
       - name: Build Image
         id: build-image
@@ -100,7 +91,7 @@ jobs:
         with:
           image: ${{ env.IMAGE_NAME }}
           tags: >-
-            ${{ steps.get-image-tag.outputs.tag }}
+            ${{ env.VERSION_TAG }}
             ${{ github.ref == 'refs/heads/master' && 'latest' || '' }}
             ${{ github.sha }}
           containerfiles: Dockerfile
