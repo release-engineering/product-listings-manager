@@ -8,6 +8,7 @@
     ":disableDependencyDashboard",
     "schedule:weekly"
   ],
+  "lockFileMaintenance": {"enabled": true},
   "packageRules": [
     {
       "description": "Patch and digest updates",
