@@ -1,5 +1,10 @@
 # SPDX-License-Identifier: GPL-2.0+
+from unittest.mock import Mock
+
 from pytest import raises
+
+from product_listings_manager.permissions import has_permission
+from product_listings_manager.schemas import Permission, SqlQuery
 
 from .conftest import PERMISSIONS
 
@@ -43,3 +48,37 @@ class TestPermissions:
 
         with raises(FileNotFoundError):
             auth_client.get("/api/v1.0/permissions")
+
+    def test_has_permissions(self):
+        ldap_config = Mock()
+        user = "alice"
+        permission = Permission(
+            name="test", users=[user], queries=["INSERT * TO products"]
+        )
+        assert (
+            has_permission(
+                user,
+                [SqlQuery(query="INSERT 1 to products")],
+                [permission],
+                ldap_config=ldap_config,
+            )
+            is True
+        )
+        assert (
+            has_permission(
+                user,
+                [SqlQuery(query=" INSERT 1 to products ; ")],
+                [permission],
+                ldap_config=ldap_config,
+            )
+            is True
+        )
+        assert (
+            has_permission(
+                user,
+                [SqlQuery(query="INSERT 1 to products2")],
+                [permission],
+                ldap_config=ldap_config,
+            )
+            is False
+        )

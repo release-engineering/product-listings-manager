@@ -7,7 +7,7 @@ from product_listings_manager.schemas import Permission, SqlQuery
 
 
 def normalize(text):
-    return re.sub(r"\s+", " ", text.strip().upper())
+    return re.sub(r"\s+", " ", text.upper()).strip(" ;")
 
 
 def query_matches(query: str, permission: Permission) -> bool:
