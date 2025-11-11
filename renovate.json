@@ -6,9 +6,9 @@
     "group:all",
     ":gitSignOff",
     ":disableDependencyDashboard",
+    ":maintainLockFilesWeekly",
     "schedule:weekly"
   ],
-  "lockFileMaintenance": {"enabled": true},
   "packageRules": [
     {
       "description": "Patch and digest updates",
