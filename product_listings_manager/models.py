@@ -33,7 +33,18 @@ if DATABASE_URL.startswith("sqlite://"):
         poolclass=StaticPool,
     )
 else:
-    engine = create_engine(DATABASE_URL)
+    engine = create_engine(
+        DATABASE_URL,
+        # Configure connection pool for production
+        pool_size=10,  # Number of persistent connections
+        max_overflow=20,  # Maximum overflow connections
+        pool_timeout=30,  # Seconds to wait for a connection
+        pool_recycle=1800,  # Recycle connections every 30 minutes
+        pool_pre_ping=True,  # Verify connection is alive before using
+        echo=False,  # Set to True for debugging SQL
+        # Optional: Connection isolation level
+        isolation_level="READ COMMITTED",
+    )
 
 SQLAlchemyInstrumentor().instrument(engine=engine)
 
