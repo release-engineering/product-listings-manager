@@ -1,8 +1,8 @@
 product-listings-manager
 ========================
 
-.. image:: https://quay.io/repository/factory2/product-listings-manager/status
-          :target: https://quay.io/repository/factory2/product-listings-manager
+.. image:: https://quay.io/repository/redhat-user-workloads/exd-sp-rhel-wf-tenant/plm/status
+          :target: https://quay.io/repository/redhat-user-workloads/exd-sp-rhel-wf-tenant/plm
 
 .. image:: https://coveralls.io/repos/github/release-engineering/product-listings-manager/badge.svg?branch=master
           :target: https://coveralls.io/github/release-engineering/product-listings-manager?branch=master
