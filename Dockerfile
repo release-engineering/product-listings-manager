@@ -42,10 +42,15 @@ COPY \
     docker/docker-entrypoint.sh \
     docker/logging.ini \
     ./
+
+ARG SHORT_COMMIT
+ARG COMMIT_TIMESTAMP
+
 # hadolint ignore=SC1091
 RUN set -ex \
     && export PATH=/root/.cargo/bin:"$PATH" \
     && . /venv/bin/activate \
+    && uv version "1.1.2.dev$COMMIT_TIMESTAMP+git.$SHORT_COMMIT" \
     && uv build --wheel \
     && version=$(uv version --short) \
     && pip install --no-cache-dir dist/product_listings_manager-"$version"-py3*.whl \
@@ -60,8 +65,6 @@ USER 1001
 
 # --- Final image
 FROM scratch
-ARG GITHUB_SHA
-ARG EXPIRES_AFTER
 LABEL \
     name="product-listings-manager" \
     vendor="product-listings-manager developers" \
@@ -70,10 +73,7 @@ LABEL \
     maintainer="Red Hat, Inc." \
     license="MIT" \
     url="https://github.com/release-engineering/product-listings-manager" \
-    vcs-type="git" \
-    vcs-ref=$GITHUB_SHA \
-    io.k8s.display-name="Product Listings Manager" \
-    quay.expires-after=$EXPIRES_AFTER
+    io.k8s.display-name="Product Listings Manager"
 
 ENV \
     PYTHONFAULTHANDLER=1 \
