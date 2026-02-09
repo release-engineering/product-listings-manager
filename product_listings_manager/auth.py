@@ -17,7 +17,7 @@ def process_gssapi_request(token):
         sc = gssapi.SecurityContext(usage="accept")
 
         stage = "step context"
-        token = sc.step(token if token else None)
+        token = sc.step(token or None)
         token = token if token is not None else b""
 
         # The current architecture cannot support continuation here
