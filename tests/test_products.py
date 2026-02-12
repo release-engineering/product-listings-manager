@@ -18,8 +18,8 @@ from product_listings_manager.products import (
     get_product_info,
     get_product_labels,
     get_product_listings,
-    my_sort,
     precalc_treelist,
+    product_version_sort,
     score,
 )
 
@@ -41,24 +41,30 @@ class TestProduct:
         assert 5 == score("U1-beta")
         assert -1 == score("other")
 
-    def test_my_sort(self):
+    def test_product_version_sort(self):
         # x starts with y
-        assert -1 == my_sort("U1-beta", "U1")
+        assert -1 == product_version_sort("U1-beta", "U1")
+        assert 1 == product_version_sort("U10", "U1")
 
         # y starts with x
-        assert 1 == my_sort("U1", "U1-beta")
+        assert 1 == product_version_sort("U1", "U1-beta")
 
         # score(x) == score(y)
-        assert -1 == my_sort("7.1", "7.2")
-        assert -1 == my_sort("U3", "U4")
-        assert 1 == my_sort("7.2", "7.1")
-        assert 1 == my_sort("U4", "U3")
-        assert 0 == my_sort("8.0.0", "8.0.0")
+        assert -1 == product_version_sort("7.1", "7.2")
+        assert -1 == product_version_sort("U3", "U4")
+        assert 1 == product_version_sort("7.2", "7.1")
+        assert 1 == product_version_sort("U4", "U3")
+        assert 1 == product_version_sort("U30", "U9")
+        assert 0 == product_version_sort("u1", "U1")
+        assert 0 == product_version_sort("8.0.0", "8.0.0")
+        assert 1 == product_version_sort("6.9", "6.3")
+        assert 1 == product_version_sort("8.1", "8.0.0")
+        assert 1 == product_version_sort("8.0.1", "8.0")
+        assert -1 == product_version_sort("8.0", "8.0.1")
+        assert 1 == product_version_sort("6.18.3", "6.18")
 
         # score(x) != score(y)
-        assert -1 == my_sort("Beta1", "Gold")
-        assert 1 == my_sort("6.9", "6.3")
-        assert 1 == my_sort("8.1", "8.0.0")
+        assert -1 == product_version_sort("Beta1", "Gold")
 
     def test_get_product_info(self, db):
         label = "RHEL-7"
