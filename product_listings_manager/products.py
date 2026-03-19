@@ -5,6 +5,7 @@ import functools
 import logging
 import os
 import re
+from itertools import zip_longest
 
 import koji
 from opentelemetry.instrumentation.requests import RequestsInstrumentor
@@ -66,16 +67,46 @@ def score(release):
     return -1
 
 
-def my_sort(x, y):
-    if len(x) > len(y) and y == x[: len(y)]:
-        return -1
-    if len(y) > len(x) and x == y[: len(x)]:
-        return 1
+def to_number_tuple(x) -> tuple[str | int, ...]:
+    """
+    Return a tuple with all series of digits converted to integers anything else remains a string.
+
+    Examples:
+    "U1-beta" -> ("U", 1, "-beta")
+    "6.18.3" -> (6, 18, 3)
+    """
+    return tuple(
+        int(x) if x.isdigit() else x
+        for x in re.split(r"(\d+)", x)
+        if x not in (".", "")
+    )
+
+
+def product_version_sort(x, y):
     x_score = score(x)
     y_score = score(y)
-    if x_score == y_score:
-        return _cmp(x, y)
-    return _cmp(x_score, y_score)
+    if x_score != y_score:
+        return _cmp(x_score, y_score)
+
+    x_tuple = to_number_tuple(x.lower())
+    y_tuple = to_number_tuple(y.lower())
+
+    for a, b in zip_longest(x_tuple, y_tuple):
+        if type(a) is not type(b):
+            # 1.2.3 > 1.2-beta
+            if isinstance(a, int):
+                return 1
+            if isinstance(b, int):
+                return -1
+            # U1 > U1-beta
+            if a is None:
+                return 1
+            return -1
+
+        result = _cmp(a, b)
+        if result != 0:
+            return result
+    return 0
 
 
 def get_product_info(db, label):
@@ -84,7 +115,7 @@ def get_product_info(db, label):
     versions = [x.version for x in products]
     # Use functools.cmp_to_key for python3
     # https://docs.python.org/3/library/functools.html#functools.cmp_to_key
-    versions.sort(key=functools.cmp_to_key(my_sort))
+    versions.sort(key=functools.cmp_to_key(product_version_sort))
     versions.reverse()
 
     if not versions:
