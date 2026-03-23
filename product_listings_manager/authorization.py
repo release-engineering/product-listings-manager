@@ -13,6 +13,7 @@ log = logging.getLogger(__name__)
 class LdapConfig:
     host: str
     searches: list[dict[str, str]]
+    use_gssapi: bool = False
 
 
 def get_group_membership(
@@ -30,6 +31,8 @@ def get_group_membership(
 def get_user_groups(user: str, ldap_config: LdapConfig) -> Generator[str, None, None]:
     try:
         ldap_connection = ldap.initialize(ldap_config.host)
+        if ldap_config.use_gssapi:
+            ldap_connection.sasl_interactive_bind_s("", ldap.sasl.gssapi())
         for ldap_search in ldap_config.searches:
             yield from get_group_membership(user, ldap_connection, ldap_search)
     except ldap.SERVER_DOWN:

@@ -74,3 +74,27 @@ class TestLogin:
         r = auth_client.get("/api/v1.0/login", headers=auth_headers())
         assert r.status_code == 502, r.text
         assert r.json() == {"message": "Unexpected LDAP connection error"}
+
+
+class TestLoginGSSAPI:
+    def test_login_gssapi(self, auth_client_gssapi, ldap_connection_gssapi):
+        r = auth_client_gssapi.get("/api/v1.0/login", headers=auth_headers())
+        assert r.status_code == 200, r.text
+        assert r.json() == {"user": "test_user", "groups": ["group1"]}
+        ldap_connection_gssapi.sasl_interactive_bind_s.assert_called_once()
+        ldap_connection_gssapi.search_s.assert_called_once_with(
+            LDAP_BASE, ANY, LDAP_SEARCH, ANY
+        )
+
+    def test_login_no_gssapi_by_default(self, auth_client, ldap_connection):
+        r = auth_client.get("/api/v1.0/login", headers=auth_headers())
+        assert r.status_code == 200, r.text
+        ldap_connection.sasl_interactive_bind_s.assert_not_called()
+
+    def test_login_gssapi_bind_failure(
+        self, auth_client_gssapi, ldap_connection_gssapi
+    ):
+        ldap_connection_gssapi.sasl_interactive_bind_s.side_effect = LDAPError
+        r = auth_client_gssapi.get("/api/v1.0/login", headers=auth_headers())
+        assert r.status_code == 502, r.text
+        assert r.json() == {"message": "Unexpected LDAP connection error"}
