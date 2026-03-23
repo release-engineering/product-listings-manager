@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-2.0+
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 from pytest import raises
 
@@ -82,3 +82,59 @@ class TestPermissions:
             )
             is False
         )
+
+    def test_has_permissions_oidc_groups_match(self):
+        """OIDC groups match — authorized without LDAP."""
+        ldap_config = Mock()
+        user = "bob"
+        permission = Permission(name="test", groups=["group1"], queries=["SELECT *"])
+        assert (
+            has_permission(
+                user,
+                [SqlQuery(query="SELECT 1")],
+                [permission],
+                ldap_config=ldap_config,
+                oidc_groups=["group1"],
+            )
+            is True
+        )
+
+    def test_has_permissions_oidc_groups_no_match_ldap_fallback(self):
+        """OIDC groups don't match, LDAP fallback authorizes."""
+        ldap_config = Mock()
+        user = "bob"
+        permission = Permission(name="test", groups=["group1"], queries=["SELECT *"])
+        with patch(
+            "product_listings_manager.permissions.get_user_groups",
+            return_value=["group1"],
+        ):
+            assert (
+                has_permission(
+                    user,
+                    [SqlQuery(query="SELECT 1")],
+                    [permission],
+                    ldap_config=ldap_config,
+                    oidc_groups=["wrong_group"],
+                )
+                is True
+            )
+
+    def test_has_permissions_oidc_groups_none_uses_ldap(self):
+        """oidc_groups=None preserves existing LDAP-only behavior."""
+        ldap_config = Mock()
+        user = "bob"
+        permission = Permission(name="test", groups=["group1"], queries=["SELECT *"])
+        with patch(
+            "product_listings_manager.permissions.get_user_groups",
+            return_value=["group1"],
+        ):
+            assert (
+                has_permission(
+                    user,
+                    [SqlQuery(query="SELECT 1")],
+                    [permission],
+                    ldap_config=ldap_config,
+                    oidc_groups=None,
+                )
+                is True
+            )
