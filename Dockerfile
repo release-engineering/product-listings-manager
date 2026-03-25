@@ -14,6 +14,7 @@ RUN set -exo pipefail \
         --nodocs \
         --disablerepo=* \
         --enablerepo=fedora,updates \
+        cyrus-sasl-gssapi \
         krb5-libs \
         openldap \
         python3 \
