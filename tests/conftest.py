@@ -99,10 +99,41 @@ def ldap_connection(client):
 
 
 @fixture
+def ldap_connection_gssapi(client):
+    with (
+        patch("ldap.initialize", autospec=True) as ldap_init,
+        patch("ldap.sasl.gssapi"),
+    ):
+        ldap_connection = ldap_init(LDAP_HOST)
+        ldap_connection.sasl_interactive_bind_s.return_value = None
+        ldap_connection.search_s.return_value = [
+            ("ou=Groups,dc=example,dc=com", {"cn": [b"group1"]})
+        ]
+        yield ldap_connection
+
+
+@fixture
 def auth_client(client, monkeypatch, tmp_path, gssapi_context, ldap_connection):
     ldap_searches = [{"BASE": LDAP_BASE, "SEARCH_STRING": LDAP_SEARCH}]
     monkeypatch.setenv("PLM_LDAP_HOST", "ldap://ldap.example.com")
     monkeypatch.setenv("PLM_LDAP_SEARCHES", json.dumps(ldap_searches))
+
+    permissions_file = tmp_path / "permissions.json"
+    with open(permissions_file, "w") as f:
+        json.dump(PERMISSIONS, f)
+    monkeypatch.setenv("PLM_PERMISSIONS", str(permissions_file))
+
+    yield client
+
+
+@fixture
+def auth_client_gssapi(
+    client, monkeypatch, tmp_path, gssapi_context, ldap_connection_gssapi
+):
+    ldap_searches = [{"BASE": LDAP_BASE, "SEARCH_STRING": LDAP_SEARCH}]
+    monkeypatch.setenv("PLM_LDAP_HOST", "ldap://ldap.example.com")
+    monkeypatch.setenv("PLM_LDAP_SEARCHES", json.dumps(ldap_searches))
+    monkeypatch.setenv("PLM_LDAP_GSSAPI", "true")
 
     permissions_file = tmp_path / "permissions.json"
     with open(permissions_file, "w") as f:

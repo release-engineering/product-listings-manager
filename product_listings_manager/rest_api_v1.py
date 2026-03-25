@@ -40,7 +40,9 @@ def ldap_config() -> LdapConfig:
             detail="Server configuration LDAP_HOST and LDAP_SEARCHES is required.",
         )
 
-    return LdapConfig(host=ldap_host, searches=ldap_searches)
+    use_gssapi = os.getenv("PLM_LDAP_GSSAPI", "").lower() in ("true", "1", "yes")
+
+    return LdapConfig(host=ldap_host, searches=ldap_searches, use_gssapi=use_gssapi)
 
 
 @lru_cache
