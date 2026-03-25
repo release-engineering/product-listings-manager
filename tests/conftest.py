@@ -103,6 +103,7 @@ def ldap_connection_gssapi(client):
     with (
         patch("ldap.initialize", autospec=True) as ldap_init,
         patch("ldap.sasl.gssapi"),
+        patch("product_listings_manager.authorization._init_gssapi_credentials"),
     ):
         ldap_connection = ldap_init(LDAP_HOST)
         ldap_connection.sasl_interactive_bind_s.return_value = None

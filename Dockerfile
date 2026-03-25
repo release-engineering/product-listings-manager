@@ -77,6 +77,7 @@ LABEL \
     io.k8s.display-name="Product Listings Manager"
 
 ENV \
+    KRB5CCNAME=FILE:/tmp/krb5cc_plm \
     PYTHONFAULTHANDLER=1 \
     PYTHONHASHSEED=random \
     PYTHONUNBUFFERED=1 \
