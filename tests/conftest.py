@@ -100,13 +100,9 @@ def ldap_connection(client):
 
 @fixture
 def ldap_connection_gssapi(client):
-    with (
-        patch("ldap.initialize", autospec=True) as ldap_init,
-        patch("ldap.sasl.gssapi"),
-        patch("product_listings_manager.authorization._init_gssapi_credentials"),
-    ):
+    with patch("ldap.initialize", autospec=True) as ldap_init:
         ldap_connection = ldap_init(LDAP_HOST)
-        ldap_connection.sasl_interactive_bind_s.return_value = None
+        ldap_connection.sasl_gssapi_bind_s.return_value = None
         ldap_connection.search_s.return_value = [
             ("ou=Groups,dc=example,dc=com", {"cn": [b"group1"]})
         ]

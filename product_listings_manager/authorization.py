@@ -1,25 +1,12 @@
 # SPDX-License-Identifier: GPL-2.0+
 import logging
-import os
 from collections.abc import Generator
 from dataclasses import dataclass
 
-import gssapi
-import gssapi.raw
 import ldap
 from fastapi import HTTPException, status
 
 log = logging.getLogger(__name__)
-
-
-def _init_gssapi_credentials():
-    """Acquire GSSAPI initiator credentials from the keytab."""
-    keytab = os.environ.get("KRB5_KTNAME")
-    if not keytab:
-        raise RuntimeError("KRB5_KTNAME environment variable is not set")
-
-    creds = gssapi.Credentials(usage="initiate", store={"client_keytab": keytab})
-    gssapi.raw.store_cred(creds, usage="initiate", overwrite=True, set_default=True)
 
 
 @dataclass
@@ -45,8 +32,7 @@ def get_user_groups(user: str, ldap_config: LdapConfig) -> Generator[str, None, 
     try:
         ldap_connection = ldap.initialize(ldap_config.host)
         if ldap_config.use_gssapi:
-            _init_gssapi_credentials()
-            ldap_connection.sasl_interactive_bind_s("", ldap.sasl.gssapi())
+            ldap_connection.sasl_gssapi_bind_s()
         for ldap_search in ldap_config.searches:
             yield from get_group_membership(user, ldap_connection, ldap_search)
     except ldap.SERVER_DOWN:
