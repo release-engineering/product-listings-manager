@@ -29,6 +29,7 @@ def get_group_membership(
 
 
 def get_user_groups(user: str, ldap_config: LdapConfig) -> Generator[str, None, None]:
+    ldap_connection = None
     try:
         ldap_connection = ldap.initialize(ldap_config.host)
         if ldap_config.use_gssapi:
@@ -47,3 +48,6 @@ def get_user_groups(user: str, ldap_config: LdapConfig) -> Generator[str, None, 
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail="Unexpected LDAP connection error",
         )
+    finally:
+        if ldap_connection:
+            ldap_connection.unbind_s()
