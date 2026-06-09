@@ -4,6 +4,8 @@ name: Gating
 "on":
   pull_request:
   push:
+    branches:
+      - master
   workflow_dispatch:
     inputs: {}
 
@@ -11,6 +13,9 @@ jobs:
   tests:
     name: Unit tests
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
@@ -36,18 +41,13 @@ jobs:
       - name: Test with tox
         run: uvx --with tox-uv tox -e py3
 
-      - name: Collect coverage with Coveralls
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          COVERALLS_PARALLEL: true
-        run: |
-          uvx --with coveralls coveralls --service=github
-
-      - name: Upload coverage to Coveralls
-        run: |
-          uvx --with coveralls coveralls --finish --service=github
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7
+        with:
+          fail_ci_if_error: true
+          verbose: true
+          use_oidc: true
+          flags: unit-tests
 
   hadolint:
     name: Hadolint
