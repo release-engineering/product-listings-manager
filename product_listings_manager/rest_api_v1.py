@@ -1,4 +1,6 @@
 # SPDX-License-Identifier: GPL-2.0+
+from __future__ import annotations
+
 import json
 import logging
 import os
@@ -99,12 +101,12 @@ def about():
         503: {"model": Message},
     },
 )
-def health(db: Session = Depends(get_db)):
+def health(db: Annotated[Session, Depends(get_db)]):
     """Provides status report."""
 
     try:
         permissions()
-    except Exception as e:
+    except (OSError, json.JSONDecodeError, ValueError) as e:
         logger.error("Failed to parse permissions configuration: %s", e)
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -122,7 +124,7 @@ def health(db: Session = Depends(get_db)):
 
     try:
         products.get_koji_session().getAPIVersion()
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         logger.warning("Koji health check failed: %s", e)
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -136,7 +138,7 @@ def health(db: Session = Depends(get_db)):
 def login(request: Request) -> LoginInfo:
     """Shows the current user and assigned groups."""
     ldap_config_ = ldap_config()
-    user, headers = get_user(request)
+    user, _headers = get_user(request)
     groups = set(get_user_groups(user, ldap_config_))
 
     return LoginInfo(user=user, groups=sorted(groups))
@@ -162,14 +164,14 @@ def login(request: Request) -> LoginInfo:
     },
 )
 def product_info(
-    label: str, request: Request, db: Session = Depends(get_db)
+    label: str, request: Request, db: Annotated[Session, Depends(get_db)]
 ) -> tuple[str, list[str]]:
     """Get the latest version of a product and its variants."""
     try:
         versions, variants = products.get_product_info(db, label)
     except products.ProductListingsNotFoundError as ex:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(ex))
-    except Exception as ex:
+    except Exception as ex:  # noqa: BLE001
         utils.log_remote_call_error(
             request, "API call get_product_info() failed", label
         )
@@ -195,11 +197,11 @@ def product_info(
         },
     },
 )
-def product_labels(request: Request, db: Session = Depends(get_db)):
+def product_labels(request: Request, db: Annotated[Session, Depends(get_db)]):
     """List all product labels."""
     try:
         return products.get_product_labels(db)
-    except Exception as ex:
+    except Exception as ex:  # noqa: BLE001
         utils.log_remote_call_error(request, "API call get_product_labels() failed")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(ex)
@@ -243,7 +245,7 @@ def product_listings(
     label: str,
     build_info: str,
     request: Request,
-    db: Session = Depends(get_db),
+    db: Annotated[Session, Depends(get_db)],
 ):
     """
     Get a map of which variants of the given product included packages built
@@ -253,7 +255,7 @@ def product_listings(
         return products.get_product_listings(db, label, build_info)
     except products.ProductListingsNotFoundError as ex:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(ex))
-    except Exception as ex:
+    except Exception as ex:  # noqa: BLE001
         utils.log_remote_call_error(
             request,
             "API call get_product_listings() failed",
@@ -270,7 +272,7 @@ def module_product_listings(
     label: str,
     module_build_nvr: str,
     request: Request,
-    db: Session = Depends(get_db),
+    db: Annotated[Session, Depends(get_db)],
 ):
     """
     Get a map of which variants of the given product included the given module,
@@ -280,7 +282,7 @@ def module_product_listings(
         return products.get_module_product_listings(db, label, module_build_nvr)
     except products.ProductListingsNotFoundError as ex:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(ex))
-    except Exception as ex:
+    except Exception as ex:  # noqa: BLE001
         utils.log_remote_call_error(
             request,
             "API call get_module_product_listings() failed",
@@ -330,7 +332,7 @@ def dbquery(
         Body(openapi_examples=SQL_QUERY_EXAMPLES),
     ],
     request: Request,
-    db: Session = Depends(get_db),
+    db: Annotated[Session, Depends(get_db)],
 ) -> list[dict[str, Any]]:
     """
     Executes given SQL queries with optionally provided parameters.
@@ -353,7 +355,7 @@ def dbquery(
         )
 
     ldap_config_ = ldap_config()
-    user, headers = get_user(request)
+    user, _headers = get_user(request)
 
     # normalize queries type to list of SqlQuery
     if isinstance(query_or_queries, SqlQuery):

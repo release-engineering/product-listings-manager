@@ -1,4 +1,5 @@
 # koji hub plugin
+from __future__ import annotations
 
 import copy
 import functools

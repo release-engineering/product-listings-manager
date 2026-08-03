@@ -53,7 +53,9 @@ class TreesFactory(BaseFactoryWithID):
 
     name = FuzzyText()
     buildname = FuzzyText()
-    date = FuzzyNaiveDateTime(datetime.datetime.now())
+    date = FuzzyNaiveDateTime(
+        datetime.datetime.now(tz=datetime.timezone.utc).replace(tzinfo=None)
+    )
     arch = FuzzyText()
     imported = 1
     compatlayer = False
