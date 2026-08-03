@@ -27,9 +27,11 @@ def exception_log(app):
 
 @fixture
 def mock_koji_session():
-    with patch("product_listings_manager.products.koji.ClientSession") as mocked:
-        with patch("product_listings_manager.products.koji.read_config", autospec=True):
-            yield mocked()
+    with (
+        patch("product_listings_manager.products.koji.ClientSession") as mocked,
+        patch("product_listings_manager.products.koji.read_config", autospec=True),
+    ):
+        yield mocked()
 
 
 class TestIndex:

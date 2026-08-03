@@ -210,10 +210,14 @@ class TestDBQuery:
 
     def test_db_query_rollback_after_failure(self, auth_client):
         queries = [
-            "INSERT INTO products (label, version, variant, allow_source_only)"
-            "  VALUES ('product1', '1.2', 'Client', 1)",
-            "INSERT INTO products (label, version, variant, allow_source_only)"
-            "  VALUES ('product1', null, 'Client', 1)",
+            (
+                "INSERT INTO products (label, version, variant, allow_source_only)"
+                "  VALUES ('product1', '1.2', 'Client', 1)"
+            ),
+            (
+                "INSERT INTO products (label, version, variant, allow_source_only)"
+                "  VALUES ('product1', null, 'Client', 1)"
+            ),
         ]
         r = auth_client.post(
             "/api/v1.0/dbquery",
