@@ -1,0 +1,2 @@
+[codespell]
+skip = docker/docker-entrypoint-initdb.d/05-init.sql

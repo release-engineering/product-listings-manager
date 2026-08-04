@@ -148,7 +148,7 @@ class Trees(BaseModel):
 class Overrides(BaseModel):
     """overrides table in composedb.
 
-    Many columns are set as primary key becasue primary key is required
+    Many columns are set as primary key because primary key is required
     in SQLAlchemy ORM and these columns are unique together.
 
     https://docs.sqlalchemy.org/en/latest/faq/ormconfiguration.html#how-do-i-map-a-table-that-has-no-primary-key
