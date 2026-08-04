@@ -1,0 +1,10 @@
+---
+extends: default
+rules:
+  comments:
+    min-spaces-from-content: 1
+  indentation:
+    indent-sequences: whatever
+  line-length: disable
+  truthy:
+    check-keys: false
