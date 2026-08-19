@@ -77,6 +77,16 @@ class TestLogin:
             LDAP_BASE, ANY, LDAP_SEARCH, ANY
         )
 
+    def test_login_ldap_cached(self, auth_client, ldap_connection):
+        r = auth_client.get("/api/v1.0/login", headers=auth_headers())
+        assert r.status_code == 200, r.text
+        assert ldap_connection.search_s.call_count == 1
+
+        r = auth_client.get("/api/v1.0/login", headers=auth_headers())
+        assert r.status_code == 200, r.text
+        assert r.json() == {"user": "test_user", "groups": ["group1"]}
+        assert ldap_connection.search_s.call_count == 1
+
     def test_login_ldap_down(self, auth_client, ldap_connection):
         ldap_connection.search_s.side_effect = SERVER_DOWN
         r = auth_client.get("/api/v1.0/login", headers=auth_headers())
