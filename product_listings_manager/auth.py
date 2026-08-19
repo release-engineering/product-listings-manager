@@ -16,12 +16,12 @@ def process_gssapi_request(token):
     try:
         sc = gssapi.SecurityContext(usage="accept")
 
-        stage = "step context"
+        stage = "process authentication token"
         token = sc.step(token or None)
         token = token if token is not None else b""
 
         # The current architecture cannot support continuation here
-        stage = "checking completion"
+        stage = "verify negotiation completion"
         if not sc.complete:
             logger.error("Multiple GSSAPI round trips not supported")
             raise HTTPException(
@@ -31,15 +31,19 @@ def process_gssapi_request(token):
 
         logger.debug("Completed GSSAPI negotiation")
 
-        stage = "getting remote user"
+        stage = "get remote user"
         user = str(sc.initiator_name)
         return user, token
     except gssapi.exceptions.GSSError as e:
-        logger.exception(
-            "Unable to authenticate: failed to %s: %s",
-            stage,
-            e.gen_message(),
-        )
+        msg = e.gen_message()
+        if "replay" in msg.lower():
+            logger.warning("Kerberos replay detected during %s: %s", stage, msg)
+        else:
+            logger.exception(
+                "Unable to authenticate: failed to %s: %s",
+                stage,
+                msg,
+            )
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Authentication failed",
