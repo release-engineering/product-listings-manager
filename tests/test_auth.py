@@ -55,6 +55,20 @@ class TestLogin:
         assert r.status_code == 403, r.text
         assert r.json() == {"message": "Authentication failed"}
 
+    def test_login_gssapi_replay(self, auth_client, gssapi_context):
+        from unittest.mock import PropertyMock
+
+        error = GSSError(851968, 1)
+        error.gen_message = lambda: (
+            "Major (851968): Unspecified GSS failure.  "
+            "Minor code may provide more information, "
+            "Minor (2529638946): Request is a replay"
+        )
+        type(gssapi_context()).complete = PropertyMock(side_effect=error)
+        r = auth_client.get("/api/v1.0/login", headers=auth_headers())
+        assert r.status_code == 403, r.text
+        assert r.json() == {"message": "Authentication failed"}
+
     def test_login(self, auth_client, ldap_connection):
         r = auth_client.get("/api/v1.0/login", headers=auth_headers())
         assert r.status_code == 200, r.text
@@ -62,6 +76,16 @@ class TestLogin:
         ldap_connection.search_s.assert_called_once_with(
             LDAP_BASE, ANY, LDAP_SEARCH, ANY
         )
+
+    def test_login_ldap_cached(self, auth_client, ldap_connection):
+        r = auth_client.get("/api/v1.0/login", headers=auth_headers())
+        assert r.status_code == 200, r.text
+        assert ldap_connection.search_s.call_count == 1
+
+        r = auth_client.get("/api/v1.0/login", headers=auth_headers())
+        assert r.status_code == 200, r.text
+        assert r.json() == {"user": "test_user", "groups": ["group1"]}
+        assert ldap_connection.search_s.call_count == 1
 
     def test_login_ldap_down(self, auth_client, ldap_connection):
         ldap_connection.search_s.side_effect = SERVER_DOWN

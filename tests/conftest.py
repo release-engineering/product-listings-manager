@@ -56,6 +56,13 @@ def pytest_collection_modifyitems(config, items):
             item.add_marker(skip_live)
 
 
+@fixture(autouse=True)
+def _clear_ldap_cache():
+    from product_listings_manager.authorization import _fetch_user_groups
+
+    _fetch_user_groups.cache.clear()
+
+
 @fixture
 def db():
     db = SessionLocal()
@@ -90,8 +97,8 @@ def gssapi_context(client):
 
 @fixture
 def ldap_connection(client):
-    with patch("ldap.initialize", autospec=True) as ldap_init:
-        ldap_connection = ldap_init(LDAP_HOST)
+    with patch("ldap.ldapobject.ReconnectLDAPObject", autospec=True) as ldap_cls:
+        ldap_connection = ldap_cls(LDAP_HOST)
         ldap_connection.search_s.return_value = [
             ("ou=Groups,dc=example,dc=com", {"cn": [b"group1"]})
         ]
@@ -100,8 +107,8 @@ def ldap_connection(client):
 
 @fixture
 def ldap_connection_gssapi(client):
-    with patch("ldap.initialize", autospec=True) as ldap_init:
-        ldap_connection = ldap_init(LDAP_HOST)
+    with patch("ldap.ldapobject.ReconnectLDAPObject", autospec=True) as ldap_cls:
+        ldap_connection = ldap_cls(LDAP_HOST)
         ldap_connection.sasl_gssapi_bind_s.return_value = None
         ldap_connection.search_s.return_value = [
             ("ou=Groups,dc=example,dc=com", {"cn": [b"group1"]})

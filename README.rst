@@ -132,6 +132,15 @@ configuration:
 
       [{"BASE": "ou=Groups,dc=example,dc=com", "SEARCH_STRING": "(memberUid={user})"}]
 
+- ``PLM_LDAP_RETRY_COUNT`` - number of reconnect attempts on transient LDAP
+  failures, default is ``5``
+- ``PLM_LDAP_RETRY_DELAY`` - delay in seconds between LDAP reconnect attempts,
+  default is ``15``
+- ``PLM_LDAP_CACHE_TTL`` - time-to-live in seconds for cached LDAP group
+  lookups, default is ``300``; set to ``0`` to disable caching
+- ``PLM_LDAP_CACHE_MAX_SIZE`` - maximum number of entries in the LDAP group
+  cache, default is ``256``
+
 - ``PLM_PERMISSIONS`` - JSON formatted array with permissions, for example:
 
   .. code-block:: json
