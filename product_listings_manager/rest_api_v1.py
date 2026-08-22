@@ -16,6 +16,7 @@ from product_listings_manager import __version__, products, utils
 from product_listings_manager.auth import get_user
 from product_listings_manager.authorization import LdapConfig, get_user_groups
 from product_listings_manager.db_queries import execute_queries
+from product_listings_manager.koji_service import get_koji_session
 from product_listings_manager.models import get_db
 from product_listings_manager.permissions import has_permission
 from product_listings_manager.schemas import (
@@ -123,7 +124,7 @@ def health(db: Annotated[Session, Depends(get_db)]):
         )
 
     try:
-        products.get_koji_session().getAPIVersion()
+        get_koji_session().getAPIVersion()
     except Exception as e:  # noqa: BLE001
         logger.warning("Koji health check failed: %s", e)
         raise HTTPException(

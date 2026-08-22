@@ -2,6 +2,8 @@ from unittest.mock import patch
 
 import pytest
 
+from product_listings_manager.exceptions import ProductListingsNotFoundError
+from product_listings_manager.koji_service import KojiBuild
 from product_listings_manager.models import MatchVersions as MatchVersionsModel
 from product_listings_manager.models import (
     ModuleOverrides as ModuleOverridesModel,
@@ -10,7 +12,6 @@ from product_listings_manager.models import Overrides as OverridesModel
 from product_listings_manager.models import Products as ProductsModel
 from product_listings_manager.models import Trees as TreesModel
 from product_listings_manager.products import (
-    ProductListingsNotFoundError,
     get_match_versions,
     get_module_overrides,
     get_module_product_listings,
@@ -181,8 +182,19 @@ class TestProduct:
 
 class TestGetProductListings:
     @patch("product_listings_manager.products.get_koji_session")
-    def test_rpms_not_found(self, mock_get_koji_session, db):
-        mock_get_koji_session.return_value.listRPMs.return_value = []
+    @patch("product_listings_manager.products.get_rpms", return_value=[])
+    @patch(
+        "product_listings_manager.products.get_build",
+        return_value=KojiBuild(
+            id=1,
+            package_name="fake",
+            version="1.0",
+            release="1.el6",
+            module_name="",
+            module_stream="",
+        ),
+    )
+    def test_rpms_not_found(self, _mock_get_build, _mock_get_rpms, _mock_session, db):
         build = "fake-build-1.0-1.el6"
         with pytest.raises(ProductListingsNotFoundError) as excinfo:
             get_product_listings(db, "fake-label", build)
@@ -190,14 +202,23 @@ class TestGetProductListings:
 
 
 class TestGetModuleProductListings:
+    @patch("product_listings_manager.products.get_koji_session")
     @patch("product_listings_manager.products.get_build")
-    def test_not_module_build(self, mock_get_build, db):
-        mock_get_build.return_value = {"name": "perl"}
+    def test_not_module_build(self, mock_get_build, _mock_session, db):
+        mock_get_build.return_value = KojiBuild(
+            id=1,
+            package_name="perl",
+            version="5.16.3",
+            release="1.el7",
+            module_name="",
+            module_stream="",
+        )
         nvr = "perl-5.16.3-1.el7"
         with pytest.raises(ProductListingsNotFoundError) as excinfo:
             get_module_product_listings(db, "fake-label", nvr)
         assert f"This is not a module build: {nvr}" == str(excinfo.value)
 
+    @patch("product_listings_manager.products.get_koji_session")
     @patch("product_listings_manager.products.get_module_overrides")
     @patch("product_listings_manager.products.get_product_info")
     @patch("product_listings_manager.products.precalc_treelist")
@@ -208,6 +229,7 @@ class TestGetModuleProductListings:
         mock_precalc_treelist,
         mock_get_product_info,
         mock_get_module_overrides,
+        _mock_session,
         db,
     ):
         mock_with_entities = db.query(TreesModel).with_entities.return_value

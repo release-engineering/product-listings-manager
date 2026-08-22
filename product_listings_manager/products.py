@@ -4,7 +4,6 @@ from __future__ import annotations
 import copy
 import functools
 import logging
-import os
 import re
 from itertools import zip_longest
 
@@ -12,12 +11,12 @@ import koji
 from opentelemetry.instrumentation.requests import RequestsInstrumentor
 
 from product_listings_manager import models
+from product_listings_manager.exceptions import ProductListingsNotFoundError
+from product_listings_manager.koji_service import get_build, get_koji_session, get_rpms
 
 logger = logging.getLogger(__name__)
 
 RequestsInstrumentor().instrument()
-
-KOJI_CONFIG_PROFILE = os.getenv("PLM_KOJI_CONFIG_PROFILE", "brew")
 
 ALL_RELEASE_TYPES = (
     re.compile(r"^TEST\d*", re.IGNORECASE),
@@ -27,32 +26,6 @@ ALL_RELEASE_TYPES = (
     re.compile(r"^GOLD", re.IGNORECASE),
     re.compile(r"^U\d+(-beta)?$", re.IGNORECASE),
 )
-
-
-def get_koji_session():
-    """
-    Get a koji session for accessing kojihub functions.
-    """
-    conf = koji.read_config(KOJI_CONFIG_PROFILE)
-    hub = conf["server"]
-    return koji.ClientSession(hub, {})
-
-
-def get_build(nvr, session=None):
-    """
-    Get a build from kojihub.
-    """
-    if session is None:
-        session = get_koji_session()
-
-    try:
-        return session.getBuild(nvr, strict=True)
-    except koji.GenericError as ex:
-        raise ProductListingsNotFoundError(str(ex))
-
-
-class ProductListingsNotFoundError(ValueError):
-    pass
 
 
 def _cmp(a, b):
@@ -292,7 +265,7 @@ def get_product_listings(db, product_label, build_info):
     session = get_koji_session()
     build = get_build(build_info, session)
 
-    rpms = session.listRPMs(buildID=build["id"])
+    rpms = get_rpms(build.id, session)
     if not rpms:
         raise ProductListingsNotFoundError(
             f"Could not find any RPMs for build: {build_info}"
@@ -300,12 +273,12 @@ def get_product_listings(db, product_label, build_info):
 
     # sort rpms, so first part of list consists of sorted 'normal' rpms and
     # second part are sorted debuginfos
-    debuginfos = [x for x in rpms if "-debuginfo" in x["nvr"]]
-    base_rpms = [x for x in rpms if "-debuginfo" not in x["nvr"]]
-    rpms = sorted(base_rpms, key=lambda x: x["nvr"]) + sorted(
-        debuginfos, key=lambda x: x["nvr"]
+    debuginfos = [x for x in rpms if "-debuginfo" in x.nvr]
+    base_rpms = [x for x in rpms if "-debuginfo" not in x.nvr]
+    rpms = sorted(base_rpms, key=lambda x: x.nvr) + sorted(
+        debuginfos, key=lambda x: x.nvr
     )
-    srpm = "{package_name}-{version}-{release}.src.rpm".format(**build)
+    srpm = f"{build.package_name}-{build.version}-{build.release}.src.rpm"
 
     prodinfo = get_product_info(db, product_label)
     version, variants = prodinfo
@@ -322,63 +295,63 @@ def get_product_listings(db, product_label, build_info):
         overrides = get_overrides(db, product_label, version, variant)
         cache_map = {}
         for rpm in rpms:
-            if rpm["name"] in match_version:
-                rpm_version = rpm["version"]
+            if rpm.name in match_version:
+                rpm_version = rpm.version
             else:
                 rpm_version = None
 
         # without debuginfos
-        rpms_nondebug = [rpm for rpm in rpms if not koji.is_debuginfo(rpm["name"])]
+        rpms_nondebug = [rpm for rpm in rpms if not koji.is_debuginfo(rpm.name)]
         d = {}
-        all_archs = {rpm["arch"] for rpm in rpms_nondebug}
+        all_archs = {rpm.arch for rpm in rpms_nondebug}
         for arch in all_archs:
             d[arch] = dest_get_archs(
                 db,
                 treelist,
                 arch,
-                [rpm["name"] for rpm in rpms_nondebug if rpm["arch"] == arch],
+                [rpm.name for rpm in rpms_nondebug if rpm.arch == arch],
                 cache_map.get(srpm, {}).get(arch, {}),
                 rpm_version,
                 overrides,
             )
 
         for rpm in rpms_nondebug:
-            dest_archs = d[rpm["arch"]].get(rpm["name"], {}).keys()
-            if rpm["arch"] != "src":
+            dest_archs = d[rpm.arch].get(rpm.name, {}).keys()
+            if rpm.arch != "src":
                 cache_map.setdefault(srpm, {})
-                cache_map[srpm].setdefault(rpm["arch"], {})
+                cache_map[srpm].setdefault(rpm.arch, {})
                 for x in dest_archs:
-                    cache_map[srpm][rpm["arch"]][x] = 1
+                    cache_map[srpm][rpm.arch][x] = 1
             for dest_arch in dest_archs:
-                listings.setdefault(variant, {}).setdefault(rpm["nvr"], {}).setdefault(
-                    rpm["arch"], []
+                listings.setdefault(variant, {}).setdefault(rpm.nvr, {}).setdefault(
+                    rpm.arch, []
                 ).append(dest_arch)
 
         # debuginfo only
-        rpms_debug = [rpm for rpm in rpms if koji.is_debuginfo(rpm["name"])]
+        rpms_debug = [rpm for rpm in rpms if koji.is_debuginfo(rpm.name)]
         d = {}
-        all_archs = {rpm["arch"] for rpm in rpms_debug}
+        all_archs = {rpm.arch for rpm in rpms_debug}
         for arch in all_archs:
             d[arch] = dest_get_archs(
                 db,
                 treelist,
                 arch,
-                [rpm["name"] for rpm in rpms_debug if rpm["arch"] == arch],
+                [rpm.name for rpm in rpms_debug if rpm.arch == arch],
                 cache_map.get(srpm, {}).get(arch, {}),
                 rpm_version,
                 overrides,
             )
 
         for rpm in rpms_debug:
-            dest_archs = d[rpm["arch"]].get(rpm["name"], {}).keys()
-            if rpm["arch"] != "src":
+            dest_archs = d[rpm.arch].get(rpm.name, {}).keys()
+            if rpm.arch != "src":
                 cache_map.setdefault(srpm, {})
-                cache_map[srpm].setdefault(rpm["arch"], {})
+                cache_map[srpm].setdefault(rpm.arch, {})
                 for x in dest_archs:
-                    cache_map[srpm][rpm["arch"]][x] = 1
+                    cache_map[srpm][rpm.arch][x] = 1
             for dest_arch in dest_archs:
-                listings.setdefault(variant, {}).setdefault(rpm["nvr"], {}).setdefault(
-                    rpm["arch"], []
+                listings.setdefault(variant, {}).setdefault(rpm.nvr, {}).setdefault(
+                    rpm.arch, []
                 ).append(dest_arch)
 
         for variant in list(listings.keys()):
@@ -398,13 +371,12 @@ def get_module_product_listings(db, product_label, module_nvr):
     Get a map of which variants of the given product included the given module,
     and which arches each variant included.
     """
-    build = get_build(module_nvr)
-    try:
-        module = build["extra"]["typeinfo"]["module"]
-        module_name = module["name"]
-        module_stream = module["stream"]
-    except (KeyError, TypeError):
+    session = get_koji_session()
+    build = get_build(module_nvr, session)
+    if not build.module_name:
         raise ProductListingsNotFoundError(f"This is not a module build: {module_nvr}")
+    module_name = build.module_name
+    module_stream = build.module_stream
 
     prodinfo = get_product_info(db, product_label)
     version, variants = prodinfo

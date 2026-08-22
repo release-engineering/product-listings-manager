@@ -57,10 +57,13 @@ def pytest_collection_modifyitems(config, items):
 
 
 @fixture(autouse=True)
-def _clear_ldap_cache():
+def _clear_caches():
     from product_listings_manager.authorization import _fetch_user_groups
+    from product_listings_manager.koji_service import _build_cache, _rpms_cache
 
     _fetch_user_groups.cache.clear()
+    _build_cache.clear()
+    _rpms_cache.clear()
 
 
 @fixture
