@@ -28,8 +28,8 @@ def exception_log(app):
 @fixture
 def mock_koji_session():
     with (
-        patch("product_listings_manager.products.koji.ClientSession") as mocked,
-        patch("product_listings_manager.products.koji.read_config", autospec=True),
+        patch("product_listings_manager.koji_service.koji.ClientSession") as mocked,
+        patch("product_listings_manager.koji_service.koji.read_config", autospec=True),
     ):
         yield mocked()
 
@@ -97,14 +97,14 @@ class TestHealth:
             "message", ""
         )
 
-    @patch("product_listings_manager.rest_api_v1.products.get_koji_session")
+    @patch("product_listings_manager.rest_api_v1.get_koji_session")
     def test_health_koji_fail(self, mock_koji, client):
         mock_koji.side_effect = Exception("koji connect error")
         r = client.get("/api/v1.0/health")
         assert r.status_code == 503, r.text
         assert "Koji Error: koji connect error" in r.json().get("message")
 
-    @patch("product_listings_manager.rest_api_v1.products.get_koji_session")
+    @patch("product_listings_manager.rest_api_v1.get_koji_session")
     def test_health_ok(self, mock_koji, client):
         mock_koji.return_value.getAPIVersion.return_value = 1
         r = client.get("/api/v1.0/health")
@@ -172,15 +172,32 @@ class TestProductListings:
                 "arch": "s390x",
                 "name": debuginfo_pkg_name,
                 "nvr": debuginfo_nvr,
+                "version": self.pkg_version,
             },
-            {"arch": "s390x", "name": self.pkg_name, "nvr": self.nvr},
+            {
+                "arch": "s390x",
+                "name": self.pkg_name,
+                "nvr": self.nvr,
+                "version": self.pkg_version,
+            },
             {
                 "arch": "x86_64",
                 "name": debuginfo_pkg_name,
                 "nvr": debuginfo_nvr,
+                "version": self.pkg_version,
             },
-            {"arch": "x86_64", "name": self.pkg_name, "nvr": self.nvr},
-            {"arch": "src", "name": self.pkg_name, "nvr": self.nvr},
+            {
+                "arch": "x86_64",
+                "name": self.pkg_name,
+                "nvr": self.nvr,
+                "version": self.pkg_version,
+            },
+            {
+                "arch": "src",
+                "name": self.pkg_name,
+                "nvr": self.nvr,
+                "version": self.pkg_version,
+            },
         ]
 
         # Create products, trees, packages records in db
@@ -240,7 +257,12 @@ class TestProductListings:
 
         # mock result of koji listRPMs() API
         mock_koji_session.listRPMs.return_value = [
-            {"arch": "src", "name": self.pkg_name, "nvr": self.nvr}
+            {
+                "arch": "src",
+                "name": self.pkg_name,
+                "nvr": self.nvr,
+                "version": self.pkg_version,
+            }
         ]
 
         # Create products, trees, packages records in db
@@ -286,8 +308,18 @@ class TestProductListings:
         }
 
         mock_koji_session.listRPMs.return_value = [
-            {"arch": "x86_64", "name": self.pkg_name, "nvr": self.nvr},
-            {"arch": "src", "name": self.pkg_name, "nvr": self.nvr},
+            {
+                "arch": "x86_64",
+                "name": self.pkg_name,
+                "nvr": self.nvr,
+                "version": self.pkg_version,
+            },
+            {
+                "arch": "src",
+                "name": self.pkg_name,
+                "nvr": self.nvr,
+                "version": self.pkg_version,
+            },
         ]
 
         variant = "EXTRAS-6"
@@ -350,6 +382,10 @@ class TestModuleProductListings:
 
     def test_get_module_product_listings(self, mock_koji_session, client):
         mock_koji_session.getBuild.return_value = {
+            "id": 1,
+            "package_name": self.module_name,
+            "version": self.module_stream,
+            "release": "820181217154935.9edba152",
             "extra": {
                 "typeinfo": {
                     "module": {
@@ -357,7 +393,7 @@ class TestModuleProductListings:
                         "stream": self.module_stream,
                     }
                 }
-            }
+            },
         }
         variant = "AppStream-8.0.0"
         p = ProductsFactory(label=self.product_label, version="8.0.0", variant=variant)

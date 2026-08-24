@@ -1,0 +1,2 @@
+class ProductListingsNotFoundError(ValueError):
+    pass
