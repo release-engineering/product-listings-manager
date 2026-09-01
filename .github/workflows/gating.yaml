@@ -25,7 +25,7 @@ jobs:
           persist-credentials: false
 
       - name: Install uv
-        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
         with:
           python-version: "3.14"
           enable-cache: true
@@ -67,6 +67,6 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: hadolint/hadolint-action@2332a7b74a6de0dda2e2221d575162eba76ba5e5 # v3.3.0
+      - uses: hadolint/hadolint-action@06be81baf89a55ffd0e24b8f04a4185738dd3387 # v3.5.0
         with:
           dockerfile: ${{ matrix.dockerfile }}
