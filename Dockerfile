@@ -1,7 +1,7 @@
 FROM quay.io/fedora/python-314:20260826@sha256:41097b98a5f89856a2d1f8c65b099e6760f8972e2951ca77c5f367f6f2aee24f AS builder
 
 # builder should use root to install/create all files
-USER root
+USER 0
 
 # hadolint ignore=DL3033,DL3041,DL4006,SC2039,SC3040
 RUN set -exo pipefail \
