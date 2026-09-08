@@ -1,8 +1,11 @@
 # SPDX-License-Identifier: GPL-2.0+
 from unittest.mock import Mock
 
+from fastapi.testclient import TestClient
+from pydantic_core import ValidationError
 from pytest import raises
 
+from product_listings_manager.app import create_app
 from product_listings_manager.permissions import has_permission
 from product_listings_manager.schemas import Permission, SqlQuery
 
@@ -28,26 +31,28 @@ class TestPermissions:
         permissions = [{k: v for k, v in p.items() if v} for p in r.json()]
         assert permissions == PERMISSIONS
 
-    def test_get_permissions_with_invalid_config(
-        self, auth_client, monkeypatch, tmp_path
-    ):
+    def test_get_permissions_with_invalid_config(self, monkeypatch, tmp_path, db):
+        """Test that app fails to start with invalid permissions config."""
         permissions_file = tmp_path / "permissions_bad.json"
         with open(permissions_file, "w") as f:
             f.write("[{}]")
 
         monkeypatch.setenv("PLM_PERMISSIONS", str(permissions_file))
 
-        with raises(ValueError):
-            auth_client.get("/api/v1.0/permissions")
+        # TestClient should raise ValidationError when entering context (lifespan startup)
+        app = create_app()
+        with raises(ValidationError), TestClient(app):
+            pass
 
-    def test_get_permissions_with_missing_config(
-        self, auth_client, monkeypatch, tmp_path
-    ):
+    def test_get_permissions_with_missing_config(self, monkeypatch, tmp_path, db):
+        """Test that app fails to start with missing permissions file."""
         permissions_file = tmp_path / "permissions_empty.json"
         monkeypatch.setenv("PLM_PERMISSIONS", str(permissions_file))
 
-        with raises(FileNotFoundError):
-            auth_client.get("/api/v1.0/permissions")
+        # TestClient should raise FileNotFoundError when entering context (lifespan startup)
+        app = create_app()
+        with raises(FileNotFoundError), TestClient(app):
+            pass
 
     def test_has_permissions(self):
         ldap_config = Mock()

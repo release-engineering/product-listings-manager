@@ -74,29 +74,6 @@ class TestHealth:
         assert r.status_code == 503, r.text
         assert "DB Error:" in r.json().get("message", "")
 
-    def test_health_permissions_file_not_found(self, client, monkeypatch, tmp_path):
-        permissions_file = tmp_path / "permissions_empty.json"
-        monkeypatch.setenv("PLM_PERMISSIONS", str(permissions_file))
-
-        r = client.get("/api/v1.0/health")
-        assert r.status_code == 503, r.text
-        assert "Failed to parse permissions configuration:" in r.json().get(
-            "message", ""
-        )
-
-    def test_health_permissions_file_invalid(self, client, monkeypatch, tmp_path):
-        permissions_file = tmp_path / "permissions_bad.json"
-        with open(permissions_file, "w") as f:
-            f.write("[{}]")
-
-        monkeypatch.setenv("PLM_PERMISSIONS", str(permissions_file))
-
-        r = client.get("/api/v1.0/health")
-        assert r.status_code == 503, r.text
-        assert "Failed to parse permissions configuration:" in r.json().get(
-            "message", ""
-        )
-
     @patch("product_listings_manager.rest_api_v1.get_koji_session")
     def test_health_koji_fail(self, mock_koji, client):
         mock_koji.side_effect = Exception("koji connect error")
@@ -110,6 +87,58 @@ class TestHealth:
         r = client.get("/api/v1.0/health")
         assert r.status_code == 200, r.text
         assert r.json() == {"message": "It works!"}
+
+
+class TestHealthLive:
+    """Tests for /api/v1.0/health/live endpoint used by liveness probe."""
+
+    def test_liveness_ok(self, client):
+        """Liveness probe should always return 200 if app is running."""
+        r = client.get("/api/v1.0/health/live")
+        assert r.status_code == 200, r.text
+        assert r.json() == {"status": "ok"}
+
+
+class TestHealthReady:
+    """Tests for /api/v1.0/health/ready endpoint used by readiness/startup probes."""
+
+    def test_readiness_ok(self, client):
+        """Readiness should return 200 when DB and config are OK."""
+        r = client.get("/api/v1.0/health/ready")
+        assert r.status_code == 200, r.text
+        assert r.json() == {"status": "ok"}
+
+    def test_readiness_db_fail(self, client, app):
+        """Readiness should fail when database is unavailable."""
+
+        async def mock_get_db():
+            mocked = Mock()
+            mocked().execute.side_effect = SQLAlchemyError("db connect error")
+            return mocked()
+
+        app.dependency_overrides[get_db] = mock_get_db
+        r = client.get("/api/v1.0/health/ready")
+        assert r.status_code == 503, r.text
+        assert "Database unavailable:" in r.json().get("message", "")
+
+    @patch("product_listings_manager.rest_api_v1.get_koji_session")
+    def test_readiness_ignores_koji_failure(self, mock_koji, client):
+        """
+        Readiness should NOT check Koji connectivity.
+        This test verifies that even if Koji is unavailable, readiness passes.
+        This is in contrast to /api/v1.0/health which does check Koji.
+        """
+        # Make Koji fail - this would cause /api/v1.0/health to fail
+        mock_koji.side_effect = Exception("koji unavailable")
+
+        # But /api/v1.0/health/ready should still pass because it doesn't check Koji
+        r = client.get("/api/v1.0/health/ready")
+        assert r.status_code == 200, r.text
+
+        # For comparison, /api/v1.0/health should fail
+        r2 = client.get("/api/v1.0/health")
+        assert r2.status_code == 503, r2.text
+        assert "Koji Error" in r2.json().get("message")
 
 
 class TestProductInfo:

@@ -42,10 +42,7 @@ class TestDBQuery:
 
     def test_db_query_unauthorized_no_matching_groups(self, auth_client):
         query = "SELECT * FROM products"
-        with patch(
-            "product_listings_manager.rest_api_v1.parse_permissions",
-            return_value=[],
-        ):
+        with patch.object(auth_client.app.state, "permissions", []):
             r = auth_client.post(
                 "/api/v1.0/dbquery", json=query, headers=auth_headers()
             )

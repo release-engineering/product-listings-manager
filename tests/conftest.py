@@ -84,11 +84,12 @@ def app(db):
 
 @fixture
 def client(app):
-    yield TestClient(app)
+    with TestClient(app) as client:
+        yield client
 
 
 @fixture
-def gssapi_context(client):
+def gssapi_context():
     with patch(
         "product_listings_manager.auth.gssapi.SecurityContext", autospec=True
     ) as context:
@@ -99,7 +100,7 @@ def gssapi_context(client):
 
 
 @fixture
-def ldap_connection(client):
+def ldap_connection():
     with patch("ldap.ldapobject.ReconnectLDAPObject", autospec=True) as ldap_cls:
         ldap_connection = ldap_cls(LDAP_HOST)
         ldap_connection.search_s.return_value = [
@@ -109,7 +110,7 @@ def ldap_connection(client):
 
 
 @fixture
-def ldap_connection_gssapi(client):
+def ldap_connection_gssapi():
     with patch("ldap.ldapobject.ReconnectLDAPObject", autospec=True) as ldap_cls:
         ldap_connection = ldap_cls(LDAP_HOST)
         ldap_connection.sasl_gssapi_bind_s.return_value = None
@@ -120,7 +121,7 @@ def ldap_connection_gssapi(client):
 
 
 @fixture
-def auth_client(client, monkeypatch, tmp_path, gssapi_context, ldap_connection):
+def auth_client(db, monkeypatch, tmp_path, gssapi_context, ldap_connection):
     ldap_searches = [{"BASE": LDAP_BASE, "SEARCH_STRING": LDAP_SEARCH}]
     monkeypatch.setenv("PLM_LDAP_HOST", "ldap://ldap.example.com")
     monkeypatch.setenv("PLM_LDAP_SEARCHES", json.dumps(ldap_searches))
@@ -130,12 +131,15 @@ def auth_client(client, monkeypatch, tmp_path, gssapi_context, ldap_connection):
         json.dump(PERMISSIONS, f)
     monkeypatch.setenv("PLM_PERMISSIONS", str(permissions_file))
 
-    yield client
+    # Create app after setting env vars
+    app = create_app()
+    with TestClient(app) as client:
+        yield client
 
 
 @fixture
 def auth_client_gssapi(
-    client, monkeypatch, tmp_path, gssapi_context, ldap_connection_gssapi
+    db, monkeypatch, tmp_path, gssapi_context, ldap_connection_gssapi
 ):
     ldap_searches = [{"BASE": LDAP_BASE, "SEARCH_STRING": LDAP_SEARCH}]
     monkeypatch.setenv("PLM_LDAP_HOST", "ldap://ldap.example.com")
@@ -147,7 +151,10 @@ def auth_client_gssapi(
         json.dump(PERMISSIONS, f)
     monkeypatch.setenv("PLM_PERMISSIONS", str(permissions_file))
 
-    yield client
+    # Create app after setting env vars
+    app = create_app()
+    with TestClient(app) as client:
+        yield client
 
 
 def auth_headers():

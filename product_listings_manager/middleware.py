@@ -36,6 +36,11 @@ class UrlRedirectMiddleware:
         self.app = app
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        # Only process HTTP requests, not lifespan events
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
         url = URL(scope=scope)
         if "//" in url.path:
             url = url.replace(path=repeated_quotes.sub("/", url.path))

@@ -4,7 +4,6 @@ from __future__ import annotations
 import json
 import logging
 import os
-from functools import lru_cache
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Request, status
@@ -46,18 +45,6 @@ def ldap_config() -> LdapConfig:
     use_gssapi = os.getenv("PLM_LDAP_GSSAPI", "").lower() in ("true", "1", "yes")
 
     return LdapConfig(host=ldap_host, searches=ldap_searches, use_gssapi=use_gssapi)
-
-
-@lru_cache
-def parse_permissions(filename) -> list[Permission]:
-    """
-    Return PERMISSIONS configuration.
-    """
-    if not filename:
-        return []
-
-    with open(filename) as f:
-        return [Permission.model_validate(x) for x in json.load(f)]
 
 
 @router.get("/")
@@ -104,15 +91,6 @@ def about():
 )
 def health(db: Annotated[Session, Depends(get_db)]):
     """Provides status report."""
-
-    try:
-        permissions()
-    except (OSError, json.JSONDecodeError, ValueError) as e:
-        logger.error("Failed to parse permissions configuration: %s", e)
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail=f"Failed to parse permissions configuration: {e}",
-        )
 
     try:
         db.execute(text("SELECT 1"))
@@ -296,12 +274,13 @@ def module_product_listings(
 
 
 @router.get("/permissions", responses={401: {}})
-def permissions() -> list[Permission]:
+def permissions(request: Request) -> list[Permission]:
     """
     Lists user and group permissions for using **dbquery** API.
+
+    Permissions are loaded at app startup and stored in app.state.
     """
-    filename = os.getenv("PLM_PERMISSIONS")
-    return parse_permissions(filename)
+    return request.app.state.permissions
 
 
 @router.post(
@@ -369,7 +348,7 @@ def dbquery(
             for q in query_or_queries
         ]
 
-    if not has_permission(user, queries, permissions(), ldap_config_):
+    if not has_permission(user, queries, request.app.state.permissions, ldap_config_):
         logger.warning("Unauthorized DB queries for user %s: %s", user, queries)
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,

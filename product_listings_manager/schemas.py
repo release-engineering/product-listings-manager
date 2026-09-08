@@ -74,6 +74,10 @@ class HealthOkMessage(BaseModel):
     message: str = Field("It works!")
 
 
+class HealthStatus(BaseModel):
+    status: str = Field("ok", description="Health status: ok or degraded")
+
+
 class LoginInfo(BaseModel):
     user: str
     groups: list[str]

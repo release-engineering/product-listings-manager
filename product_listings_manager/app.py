@@ -2,12 +2,13 @@
 import json
 import logging
 import os
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from product_listings_manager import rest_api_v1, root
+from product_listings_manager import health, rest_api_v1, root
 from product_listings_manager.middleware import (
     AddResponseHeaders,
     UrlRedirectMiddleware,
@@ -29,8 +30,21 @@ async def http_exception_handler(request, exc):
     )
 
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """
+    Lifespan context manager for app startup and shutdown.
+    """
+    from product_listings_manager.permissions import load_permissions
+
+    app.state.permissions = await load_permissions()
+    logger.info("Loaded %d permission configurations", len(app.state.permissions))
+
+    yield
+
+
 def create_app():
-    app = FastAPI()
+    app = FastAPI(lifespan=lifespan)
     app.add_exception_handler(StarletteHTTPException, http_exception_handler)
     app.add_middleware(UrlRedirectMiddleware)
 
@@ -41,6 +55,7 @@ def create_app():
         app.add_middleware(AddResponseHeaders, headers=headers)
 
     app.include_router(root.router)
+    app.include_router(health.router)
     app.include_router(rest_api_v1.router)
     init_tracing(app)
     return app
