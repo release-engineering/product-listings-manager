@@ -97,17 +97,27 @@ objects:
           imagePullPolicy: Always
           ports:
           - containerPort: 5000
-          readinessProbe:
-            timeoutSeconds: 1
-            initialDelaySeconds: 5
+          startupProbe:
+            timeoutSeconds: 5
+            periodSeconds: 5
+            failureThreshold: 30
             httpGet:
-              path: /
+              path: /api/v1.0/health/ready
+              port: 5000
+          readinessProbe:
+            timeoutSeconds: 5
+            initialDelaySeconds: 5
+            periodSeconds: 60
+            httpGet:
+              path: /api/v1.0/health/ready
               port: 5000
           livenessProbe:
             timeoutSeconds: 1
-            initialDelaySeconds: 30
+            initialDelaySeconds: 5
+            periodSeconds: 60
+            failureThreshold: 3
             httpGet:
-              path: /
+              path: /api/v1.0/health/live
               port: 5000
           volumeMounts:
           - mountPath: /etc/product-listings-manager

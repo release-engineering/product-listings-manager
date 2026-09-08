@@ -1,4 +1,6 @@
 # SPDX-License-Identifier: GPL-2.0+
+import json
+import os
 import re
 from fnmatch import fnmatchcase
 
@@ -15,6 +17,28 @@ def query_matches(query: str, permission: Permission) -> bool:
         fnmatchcase(normalize(query), normalize(pattern))
         for pattern in permission.queries
     )
+
+
+async def load_permissions() -> list[Permission]:
+    """
+    Load permissions configuration from file.
+
+    Called once at app startup event handler.
+    If this fails, the application will not start.
+
+    Uses asyncio.to_thread() to avoid blocking the event loop during I/O.
+    """
+    import asyncio
+
+    def _load() -> list[Permission]:
+        filename = os.getenv("PLM_PERMISSIONS")
+        if not filename:
+            return []
+
+        with open(filename) as f:
+            return [Permission.model_validate(x) for x in json.load(f)]
+
+    return await asyncio.to_thread(_load)
 
 
 def has_permission(
