@@ -3,7 +3,7 @@ from unittest.mock import patch
 import pytest
 
 from product_listings_manager.exceptions import ProductListingsNotFoundError
-from product_listings_manager.koji_service import KojiBuild
+from product_listings_manager.koji_service import KojiBuild, KojiRpm
 from product_listings_manager.models import MatchVersions as MatchVersionsModel
 from product_listings_manager.models import (
     ModuleOverrides as ModuleOverridesModel,
@@ -199,6 +199,91 @@ class TestGetProductListings:
         with pytest.raises(ProductListingsNotFoundError) as excinfo:
             get_product_listings(db, "fake-label", build)
         assert f"Could not find any RPMs for build: {build}" == str(excinfo.value)
+
+    @patch("product_listings_manager.products.dest_get_archs")
+    @patch("product_listings_manager.products.get_overrides")
+    @patch("product_listings_manager.products.precalc_treelist", return_value=[])
+    @patch("product_listings_manager.products.get_product_info")
+    @patch("product_listings_manager.products.get_match_versions", return_value=[])
+    @patch("product_listings_manager.products.get_koji_session")
+    @patch("product_listings_manager.products.get_rpms")
+    @patch("product_listings_manager.products.get_build")
+    def test_variant_with_overrides_and_no_trees(
+        self,
+        mock_get_build,
+        mock_get_rpms,
+        _mock_session,
+        _mock_get_match_versions,
+        mock_get_product_info,
+        _mock_precalc_treelist,
+        mock_get_overrides,
+        mock_dest_get_archs,
+        db,
+    ):
+        # A variant can have overrides but no compose trees at all (e.g. a
+        # freshly created Hidden variant with no RHELCMP compose yet). It
+        # must not be skipped - overrides alone should be enough to surface
+        # content for it.
+        nvr = "fake-1.0-1.el10"
+        mock_get_build.return_value = KojiBuild(
+            id=1,
+            package_name="fake",
+            version="1.0",
+            release="1.el10",
+            module_name="",
+            module_stream="",
+        )
+        mock_get_rpms.return_value = [
+            KojiRpm(name="fake", arch="x86_64", nvr=nvr, version="1.0"),
+        ]
+        mock_get_product_info.return_value = ("10.2", ["Hidden"])
+
+        overrides = {"fake": {"x86_64": {"x86_64": True}}}
+        mock_get_overrides.return_value = overrides
+        mock_dest_get_archs.return_value = {"fake": {"x86_64": 1}}
+
+        result = get_product_listings(db, "fake-label", nvr)
+
+        assert result == {"Hidden": {nvr: {"x86_64": ["x86_64"]}}}
+        mock_dest_get_archs.assert_called_with(
+            db, [], "x86_64", ["fake"], {}, None, overrides
+        )
+
+    @patch("product_listings_manager.products.get_overrides", return_value={})
+    @patch("product_listings_manager.products.precalc_treelist", return_value=[])
+    @patch("product_listings_manager.products.get_product_info")
+    @patch("product_listings_manager.products.get_match_versions", return_value=[])
+    @patch("product_listings_manager.products.get_koji_session")
+    @patch("product_listings_manager.products.get_rpms")
+    @patch("product_listings_manager.products.get_build")
+    def test_variant_with_no_overrides_and_no_trees_is_skipped(
+        self,
+        mock_get_build,
+        mock_get_rpms,
+        _mock_session,
+        _mock_get_match_versions,
+        mock_get_product_info,
+        _mock_precalc_treelist,
+        _mock_get_overrides,
+        db,
+    ):
+        # Baseline: a variant with neither trees nor overrides is still
+        # skipped, same as before this fix.
+        nvr = "fake-1.0-1.el10"
+        mock_get_build.return_value = KojiBuild(
+            id=1,
+            package_name="fake",
+            version="1.0",
+            release="1.el10",
+            module_name="",
+            module_stream="",
+        )
+        mock_get_rpms.return_value = [
+            KojiRpm(name="fake", arch="x86_64", nvr=nvr, version="1.0"),
+        ]
+        mock_get_product_info.return_value = ("10.2", ["Hidden"])
+
+        assert get_product_listings(db, "fake-label", nvr) == {}
 
 
 class TestGetModuleProductListings:
