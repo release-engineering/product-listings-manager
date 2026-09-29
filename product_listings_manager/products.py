@@ -289,10 +289,12 @@ def get_product_listings(db, product_label, build_info):
         if variant is None:
             # dict keys must be a string
             variant = ""
+
         treelist = precalc_treelist(db, product_label, version, variant)
-        if not treelist:
-            continue
         overrides = get_overrides(db, product_label, version, variant)
+        if not treelist and not overrides:
+            continue
+
         cache_map = {}
         for rpm in rpms:
             if rpm.name in match_version:
