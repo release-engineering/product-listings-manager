@@ -13,7 +13,10 @@ dependencies = [
     "fastapi>=0.118.0",
     "gunicorn>=23.0.0",
     "python-dateutil>=2.8.2",
-    "SQLAlchemy>=2.0.35",
+    # Capped below 2.1: opentelemetry-instrumentation-sqlalchemy does not
+    # yet support SQLAlchemy 2.1, see
+    # https://github.com/open-telemetry/opentelemetry-python-contrib/issues/5118
+    "SQLAlchemy>=2.0.35,<2.1",
     "psycopg2-binary>=2.9.8",
     "koji>=1.35.0",
     "gssapi>=1.8.2",
